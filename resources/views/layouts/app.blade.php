@@ -32,11 +32,13 @@
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 Dashboard
             </a>
+            @if(auth()->user()->isAdmin())
             <a href="{{ route('employees.index') }}" class="nl {{ request()->routeIs('employees.*') ? 'active' : '' }}">
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Employees
                 <span class="nb b">{{ \App\Models\Employee::where('status','active')->count() }}</span>
             </a>
+            @endif
             <a href="{{ route('attendance.index') }}" class="nl {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 Attendance
@@ -64,6 +66,7 @@
                 Performance
             </a>
 
+            @if(auth()->user()->isAdmin())
             <div class="ng">Admin</div>
             <a href="{{ route('notifications.index') }}" class="nl {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -77,6 +80,7 @@
                 @php $pendingReqs = \App\Models\UserRequest::where('status','pending')->count(); @endphp
                 @if($pendingReqs) <span class="nb">{{ $pendingReqs }}</span> @endif
             </a>
+            @endif
         </div>
 
         <div class="sb-foot">

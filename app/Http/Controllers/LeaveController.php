@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\HrmsNotification;
 use App\Models\Leave;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class LeaveController extends Controller
@@ -49,7 +50,6 @@ class LeaveController extends Controller
         // We allow both roles to open the creation page, but submit is enforced in store().
         $user = auth()->user();
 
-
         if ($user && $user->isEmployee()) {
             $employee = $user->employee;
             $employees = $employee ? Employee::where('id', $employee->id)->get() : collect();
@@ -57,42 +57,45 @@ class LeaveController extends Controller
             $employees = Employee::where('status', 'active')->orderBy('first_name')->get();
         }
 
-
         return view('leaves.create', compact('employees'));
     }
 
     public function store(Request $request)
     {
-        if (!auth()->check() || !auth()->user()->isAdmin() && !auth()->user()->isEmployee()) {
+        if (! auth()->check() || ! auth()->user()->isAdmin() && ! auth()->user()->isEmployee()) {
             abort(403, 'Unauthorized.');
         }
-
 
         $data = $request->validate([
             // Some forms might use different fields; keep broad validation.
             'employee_id' => 'nullable|exists:employees,id',
-            'type'         => 'required|string',
-            'reason'       => 'nullable|string',
-            'start_date'   => 'required|date',
-            'end_date'     => 'required|date|after_or_equal:start_date',
+            'type' => 'required|string',
+            'reason' => 'nullable|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
         if (auth()->user()->isEmployee()) {
             $employee = auth()->user()->employee;
-            if (!$employee) {
+            if (! $employee) {
                 abort(403, 'No employee record found.');
             }
             $data['employee_id'] = $employee->id;
         } else {
             // Admin submissions (if supported by your UI)
             $data['employee_id'] = $data['employee_id'] ?? auth()->user()->employee?->id;
-            if (!$data['employee_id']) {
+            if (! $data['employee_id']) {
                 abort(422, 'employee_id is required for admin submissions.');
             }
         }
 
         $data['status'] = 'pending';
         $data['requested_by'] = auth()->id();
+
+        // Calculate number of days (inclusive of both start and end dates)
+        $startDate = Carbon::parse($data['start_date']);
+        $endDate = Carbon::parse($data['end_date']);
+        $data['days'] = $endDate->diffInDays($startDate) + 1;
 
         Leave::create($data);
 
@@ -103,7 +106,7 @@ class LeaveController extends Controller
     {
         if (auth()->check() && auth()->user()->isEmployee()) {
             $employee = auth()->user()->employee;
-            if (!$employee || (int) $leave->employee_id !== (int) $employee->id) {
+            if (! $employee || (int) $leave->employee_id !== (int) $employee->id) {
                 abort(403, 'Unauthorized.');
             }
         }
@@ -114,7 +117,7 @@ class LeaveController extends Controller
     // Admin-only
     public function approve(Leave $leave)
     {
-        if (!auth()->check() || !auth()->user()->isAdmin()) {
+        if (! auth()->check() || ! auth()->user()->isAdmin()) {
             abort(403, 'Unauthorized.');
         }
 
@@ -137,7 +140,7 @@ class LeaveController extends Controller
     // Admin-only
     public function deny(Leave $leave)
     {
-        if (!auth()->check() || !auth()->user()->isAdmin()) {
+        if (! auth()->check() || ! auth()->user()->isAdmin()) {
             abort(403, 'Unauthorized.');
         }
 
@@ -150,4 +153,3 @@ class LeaveController extends Controller
         return back()->with('success', 'Leave denied.');
     }
 }
-

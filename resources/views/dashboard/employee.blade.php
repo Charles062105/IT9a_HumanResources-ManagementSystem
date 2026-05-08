@@ -4,36 +4,23 @@
 <div class="welcome-strip">
     <div>
         <div class="w-greet">Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 17 ? 'afternoon' : 'evening') }}, {{ explode(' ', auth()->user()->name)[0] }}!</div>
-        <div class="w-sub">{{ now()->format('l, F j, Y') }} · Q{{ ceil(now()->month/3) }} FY{{ now()->year }} · Your workforce at a glance.</div>
-        <div class="w-tasks">
-            @if($openViolations)
-            <div class="w-chip"><span class="dot" style="background:#F87171"></span>{{ $openViolations }} violation{{ $openViolations !== 1 ? 's' : '' }} need review</div>
-            @endif
-            @if($pendingRequests)
-                <div class="w-chip"><span class="dot" style="background:#60A5FA"></span>{{ $pendingRequests }} account approval{{ $pendingRequests !== 1 ? 's' : '' }}</div>
-            @endif
-
-        </div>
+        <div class="w-sub">{{ now()->format('l, F j, Y') }} · Q{{ ceil(now()->month/3) }} FY{{ now()->year }} · Your attendance & performance overview.</div>
     </div>
     <div class="quick-actions">
-        <a href="{{ route('employees.create') }}" class="qa">
-            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-            <span>Onboard hire</span>
+        <a href="{{ route('leaves.create') }}" class="qa">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+            <span>Request leave</span>
         </a>
 
-        <a href="{{ route('violations.create') }}" class="qa">
-            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span>Log violation</span>
-        </a>
-        <a href="{{ route('performance.create') }}" class="qa">
-            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-            <span>Add review</span>
+        <a href="{{ route('timesheets.index') }}" class="qa">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+            <span>View timesheets</span>
         </a>
     </div>
 </div>
 
 {{-- LIVE CLOCK & TIME IN/OUT --}}
-@if($todayAttendance || auth()->user()->employee)
+@if($currentEmployee)
 <div style="margin:20px 0">
     <div class="card" style="background:linear-gradient(135deg, #667EEA 0%, #764BA2 100%);color:white;padding:24px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap">
@@ -86,7 +73,7 @@
                     @endif
                 @else
                     <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.1);border-radius:8px">
-                        <div style="font-size:12px;opacity:0.9">No employee record linked to your account</div>
+                        <div style="font-size:12px;opacity:0.9">No attendance record yet</div>
                     </div>
                 @endif
             </div>
@@ -95,49 +82,47 @@
 </div>
 @endif
 
-{{-- KPI CARDS --}}
+{{-- PERSONAL STATS --}}
 <div class="kpi-row">
     <div class="kpi">
         <div class="kpi-label">
-            <div class="ki" style="background:#EFF6FF"><svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
-            Total Employees
+            <div class="ki" style="background:#EFF6FF"><svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+            Present Days
         </div>
-        <div class="kpi-num">{{ $totalEmployees }}</div>
-        <div class="kpi-sub">Active headcount</div>
-        <div class="kpi-delta delta-up">↑ Active</div>
+        <div class="kpi-num">{{ $presentDays }}</div>
+        <div class="kpi-sub">Last 30 days</div>
+        <div class="kpi-delta delta-up">✓ Tracked</div>
     </div>
     <div class="kpi">
         <div class="kpi-label">
-            <div class="ki" style="background:#F0FDF4"><svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Attendance Rate
+            <div class="ki" style="background:#FEF2F2"><svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg></div>
+            Absent Days
         </div>
-        <div class="kpi-num" style="{{ $attendanceRate < 85 ? 'color:var(--danger)' : '' }}">{{ $attendanceRate }}<span class="kpi-unit">%</span></div>
-        <div class="kpi-sub">{{ $presentToday }} present today</div>
-        <div class="kpi-delta {{ $attendanceRate >= 90 ? 'delta-up' : ($attendanceRate >= 80 ? 'delta-warn' : 'delta-down') }}">
-            {{ $attendanceRate >= 90 ? '↑ Good' : ($attendanceRate >= 80 ? '⚑ Fair' : '↓ Low') }}
+        <div class="kpi-num" style="{{ $absentDays > 0 ? 'color:var(--danger)' : '' }}">{{ $absentDays }}</div>
+        <div class="kpi-sub">Last 30 days</div>
+        <div class="kpi-delta {{ $absentDays > 5 ? 'delta-down' : 'delta-up' }}">
+            {{ $absentDays > 5 ? '↑ High' : '✓ Good' }}
+        </div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">
+            <div class="ki" style="background:#F0FDF4"><svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            Violations
+        </div>
+        <div class="kpi-num" style="{{ count($myViolations) > 0 ? 'color:var(--danger)' : '' }}">{{ count($myViolations) }}</div>
+        <div class="kpi-sub">On record</div>
+        <div class="kpi-delta {{ count($myViolations) > 0 ? 'delta-down' : 'delta-up' }}">
+            {{ count($myViolations) > 0 ? '⚠ Review' : '✓ Clear' }}
         </div>
     </div>
     <div class="kpi">
         <div class="kpi-label">
             <div class="ki" style="background:#FFFBEB"><svg viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
-            Pending Leaves
+            Leave Requests
         </div>
-        <div class="kpi-num" style="{{ $pendingLeaves > 0 ? 'color:var(--warn)' : '' }}">{{ $pendingLeaves }}</div>
-        <div class="kpi-sub">Awaiting approval</div>
-        <div class="kpi-delta {{ $pendingLeaves > 0 ? 'delta-warn' : 'delta-up' }}">
-            {{ $pendingLeaves > 0 ? '⚑ Needs attention' : '✓ All clear' }}
-        </div>
-    </div>
-    <div class="kpi">
-        <div class="kpi-label">
-            <div class="ki" style="background:#FEF2F2"><svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-            Open Violations
-        </div>
-        <div class="kpi-num" style="{{ $openViolations > 0 ? 'color:var(--danger)' : '' }}">{{ $openViolations }}</div>
-        <div class="kpi-sub">Progressive discipline</div>
-        <div class="kpi-delta {{ $openViolations > 0 ? 'delta-down' : 'delta-up' }}">
-            {{ $openViolations > 0 ? '↑ '.$openViolations.' open' : '✓ All resolved' }}
-        </div>
+        <div class="kpi-num">{{ count($myLeaves) }}</div>
+        <div class="kpi-sub">Total history</div>
+        <div class="kpi-delta delta-up">📋 Managed</div>
     </div>
 </div>
 
@@ -154,81 +139,68 @@
                 <div class="leg"><div class="leg-sq" style="background:#FEE2E2"></div>Absent</div>
             </div>
             <div class="chart-wrap" style="height:160px">
-                <canvas id="attendChart" aria-label="7-day attendance chart"></canvas>
+                <canvas id="attendChart" aria-label="7-day personal attendance chart"></canvas>
             </div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <span class="card-title">Pending leaves</span>
+            <span class="card-title">My leave requests</span>
             <a href="{{ route('leaves.index') }}" class="card-action">All →</a>
         </div>
-        @forelse($pendingLeaveList as $leave)
+        @forelse($myLeaves as $leave)
         <div class="leave-item">
-            <div class="av" style="background:#DBEAFE;color:#1E40AF">{{ $leave->employee->initials }}</div>
+            <div class="av" style="background:#DBEAFE;color:#1E40AF">{{ $currentEmployee->initials ?? 'N/A' }}</div>
             <div>
-                <div style="font-size:12px;font-weight:500">{{ $leave->employee->full_name }}</div>
-                <div style="font-size:10px;color:var(--text3)">{{ ucfirst($leave->type) }} · {{ $leave->days }}d · {{ $leave->start_date->format('M j') }}–{{ $leave->end_date->format('M j') }}</div>
+                <div style="font-size:12px;font-weight:500">{{ ucfirst($leave->type) }}</div>
+                <div style="font-size:10px;color:var(--text3)">{{ $leave->days }}d · {{ $leave->start_date->format('M j') }}–{{ $leave->end_date->format('M j') }}</div>
             </div>
             <div class="l-acts">
-                <span class="td-muted">Pending</span>
+                @if($leave->status === 'pending')
+                    <span class="td-muted" style="background:#FEF3C7;color:#92400E;padding:4px 8px;border-radius:4px">Pending</span>
+                @elseif($leave->status === 'approved')
+                    <span class="td-muted" style="background:#F0FDF4;color:#166534;padding:4px 8px;border-radius:4px">Approved</span>
+                @else
+                    <span class="td-muted" style="background:#FEE2E2;color:#991B1B;padding:4px 8px;border-radius:4px">Denied</span>
+                @endif
             </div>
         </div>
         @empty
         <div class="empty-state" style="padding:24px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg>
-            No pending leaves
+            No leave requests yet
         </div>
         @endforelse
     </div>
 </div>
 
-{{-- BOTTOM ROW --}}
+{{-- VIOLATIONS --}}
 <div class="bot-row">
     <div class="card">
         <div class="card-header">
-            <span class="card-title">Violations tracker</span>
+            <span class="card-title">My violations</span>
             <a href="{{ route('violations.index') }}" class="card-action">All →</a>
         </div>
         <div class="card-body" style="padding:4px 18px 12px">
-            @forelse($recentViolations as $v)
+            @forelse($myViolations as $v)
             @php $badge = $v->level_badge_color; @endphp
             <div class="viol-item">
                 <div class="vb" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }}">{{ $badge['label'] }}</div>
                 <div>
-                    <div style="font-size:12px;font-weight:500">{{ $v->employee->full_name }}</div>
-                    <div style="font-size:10px;color:var(--text3)">{{ $v->level }} · {{ $v->offense }}</div>
+                    <div style="font-size:12px;font-weight:500">{{ $v->offense }}</div>
+                    <div style="font-size:10px;color:var(--text3)">{{ $v->level }} · {{ $v->date->format('M j, Y') }}</div>
                 </div>
-                <div style="font-size:10px;color:var(--text3);margin-left:auto">{{ $v->date->format('M j') }}</div>
+                <div class="l-acts">
+                    @if($v->status === 'open')
+                        <span class="td-muted" style="background:#FEE2E2;color:#991B1B;padding:4px 8px;border-radius:4px">Open</span>
+                    @else
+                        <span class="td-muted" style="background:#F0FDF4;color:#166534;padding:4px 8px;border-radius:4px">Resolved</span>
+                    @endif
+                </div>
             </div>
             @empty
-            <div class="empty-state" style="padding:20px">No open violations</div>
-            @endforelse
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header"><span class="card-title">Milestones today</span></div>
-        <div class="card-body" style="padding:4px 18px 12px">
-            @forelse($milestones as $m)
-            <div class="ms-item">
-                <div class="av" style="background:#FEE2E2;color:#991B1B">{{ $m['employee']->initials }}</div>
-                <div>
-                    <div style="font-size:12px;font-weight:500">{{ $m['employee']->full_name }}</div>
-                    <div style="font-size:10px;color:var(--text3)">
-                        {{ $m['employee']->department }}
-                        @if($m['type'] === 'anniversary') · {{ $m['years'] }} year{{ $m['years'] !== 1 ? 's' : '' }} @endif
-                    </div>
-                </div>
-                @if($m['type'] === 'birthday')
-                <div class="ms-tag" style="background:#EDE9FE;color:#5B21B6">Birthday</div>
-                @else
-                <div class="ms-tag" style="background:#FEF3C7;color:#92400E">Anniversary</div>
-                @endif
-            </div>
-            @empty
-            <div class="empty-state" style="padding:20px">No milestones today</div>
+            <div class="empty-state" style="padding:20px">No violations on record</div>
             @endforelse
         </div>
     </div>
@@ -239,10 +211,6 @@
     @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.5; }
-    }
-    @keyframes slideIn {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
     }
     .pulse-dot { animation: pulse 2s infinite !important; }
 </style>

@@ -1,16 +1,16 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeSetupController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\LeaveController;
-use App\Http\Controllers\TimesheetController;
-use App\Http\Controllers\ViolationController;
-use App\Http\Controllers\PerformanceController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PerformanceController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TimesheetController;
 use App\Http\Controllers\UserRequestController;
+use App\Http\Controllers\ViolationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -29,8 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::get('employees/setup', [EmployeeSetupController::class, 'show'])->name('employees.setup');
     Route::post('employees/setup', [EmployeeSetupController::class, 'store'])->name('employees.setup.store');
 
-    // HRMS Resources
-    Route::resource('employees', EmployeeController::class);
+    // HRMS Resources (accessible by all authenticated users)
     Route::resource('attendance', AttendanceController::class);
 
     // Attendance time-in/out endpoints used by views
@@ -49,6 +48,11 @@ Route::middleware('auth')->group(function () {
 
     // Leave approval actions used by dashboard/leaves views
     Route::middleware('admin')->group(function () {
+        // Admin-only resource routes
+        Route::resource('employees', EmployeeController::class);
+        Route::patch('employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate');
+        Route::patch('employees/{employee}/activate', [EmployeeController::class, 'activate'])->name('employees.activate');
+
         Route::patch('leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve');
         Route::patch('leaves/{leave}/deny', [LeaveController::class, 'deny'])->name('leaves.deny');
         Route::patch('timesheets/{timesheet}/approve', [TimesheetController::class, 'approve'])->name('timesheets.approve');

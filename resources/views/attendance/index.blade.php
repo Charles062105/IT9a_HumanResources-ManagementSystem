@@ -7,14 +7,7 @@
     </div>
     @if(auth()->user()->employee)
     <div style="display:flex;gap:8px">
-        <form method="POST" action="{{ route('attendance.time-in') }}">
-            @csrf
-            <button class="btn-primary" type="submit">⏱ Time In</button>
-        </form>
-        <form method="POST" action="{{ route('attendance.time-out') }}">
-            @csrf
-            <button class="btn-primary" type="submit" style="background:var(--success)">✓ Time Out</button>
-        </form>
+        {{-- Time-in/out buttons removed for admin-only restriction --}}
     </div>
     @endif
 </div>

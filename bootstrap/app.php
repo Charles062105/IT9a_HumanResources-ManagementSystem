@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Middleware\CheckIncompleteProfile;
+use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\IsEmployee;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\CheckIncompleteProfile;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,10 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\IsAdmin::class,
-            'employee' => \App\Http\Middleware\IsEmployee::class,
+            'admin' => IsAdmin::class,
+            'employee' => IsEmployee::class,
         ]);
-        $middleware->web(append: CheckIncompleteProfile::class);
+        // DISABLED: Causes redirect loop - needs more investigation
+        // $middleware->web(append: CheckIncompleteProfile::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

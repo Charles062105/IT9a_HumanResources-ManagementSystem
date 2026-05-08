@@ -96,10 +96,17 @@
                             <a href="{{ route('employees.show', $emp) }}" class="page-link-text">View</a>
                             @if(auth()->user()->isAdmin())
                             <a href="{{ route('employees.edit', $emp) }}" class="page-link-text">Edit</a>
-                            <form method="POST" action="{{ route('employees.destroy', $emp) }}" onsubmit="return confirm('Deactivate this employee?')">
-                                @csrf @method('DELETE')
+                            @if($emp->status !== 'inactive')
+                            <form method="POST" action="{{ route('employees.deactivate', $emp) }}" onsubmit="return confirm('Deactivate this employee?')" style="display:inline">
+                                @csrf @method('PATCH')
                                 <button type="submit" style="background:none;border:none;font-size:11px;font-weight:500;color:var(--danger);cursor:pointer;font-family:inherit;padding:0">Deactivate</button>
                             </form>
+                            @else
+                            <form method="POST" action="{{ route('employees.activate', $emp) }}" onsubmit="return confirm('Reactivate this employee?')" style="display:inline">
+                                @csrf @method('PATCH')
+                                <button type="submit" style="background:none;border:none;font-size:11px;font-weight:500;color:#16A34A;cursor:pointer;font-family:inherit;padding:0">Activate</button>
+                            </form>
+                            @endif
                             @endif
                         </div>
                     </td>

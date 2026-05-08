@@ -6,7 +6,6 @@
         <div class="page-header-sub">Weekly work hour logs and approvals</div>
     </div>
     <div style="display:flex;gap:8px">
-        <a href="{{ route('timesheets.my') }}" class="btn-secondary">My Timesheets</a>
         <a href="{{ route('timesheets.create') }}" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:12px">Submit Timesheet</a>
     </div>
 </div>

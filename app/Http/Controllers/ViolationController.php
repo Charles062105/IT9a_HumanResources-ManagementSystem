@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Violation;
 use App\Models\Employee;
+use App\Models\Violation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ViolationController extends Controller
 {
@@ -12,13 +14,30 @@ class ViolationController extends Controller
     {
         $query = Violation::with('employee')->latest();
 
-        if ($s  = $request->search)
-            $query->whereHas('employee', fn($q) => $q->where('first_name', 'like', "%$s%")->orWhere('last_name', 'like', "%$s%"));
-        if ($l  = $request->level)      $query->where('level', $l);
-        if ($dp = $request->department) $query->whereHas('employee', fn($q) => $q->where('department', $dp));
-        if ($st = $request->status)     $query->where('status', $st);
+        // Employees can only see their own violations
+        if (auth()->user()->isEmployee()) {
+            $employee = auth()->user()->employee;
+            if ($employee) {
+                $query->where('employee_id', $employee->id);
+            } else {
+                $query->whereRaw('1=0'); // No results if no employee record
+            }
+        }
 
-        $violations  = $query->paginate(20)->appends($request->all());
+        if ($s = $request->search) {
+            $query->whereHas('employee', fn ($q) => $q->where('first_name', 'like', "%$s%")->orWhere('last_name', 'like', "%$s%"));
+        }
+        if ($l = $request->level) {
+            $query->where('level', $l);
+        }
+        if ($dp = $request->department) {
+            $query->whereHas('employee', fn ($q) => $q->where('department', $dp));
+        }
+        if ($st = $request->status) {
+            $query->where('status', $st);
+        }
+
+        $violations = $query->paginate(20)->appends($request->all());
         $departments = Employee::distinct()->pluck('department')->sort();
 
         return view('violations.index', compact('violations', 'departments'));
@@ -26,7 +45,7 @@ class ViolationController extends Controller
 
     public function my()
     {
-        $employee   = auth()->user()->employee;
+        $employee = auth()->user()->employee;
         $violations = $employee
             ? Violation::where('employee_id', $employee->id)->latest()->paginate(15)
             : collect();
@@ -36,25 +55,59 @@ class ViolationController extends Controller
 
     public function create()
     {
+        // Employees should only be able to log violations for themselves.
+        if (auth()->user()->isEmployee()) {
+            $employee = auth()->user()->employee;
+            if (! $employee) {
+                abort(403);
+            }
+
+            return view('violations.create', ['employees' => collect([$employee])]);
+        }
+
         $employees = Employee::where('status', 'active')->orderBy('first_name')->get();
+
         return view('violations.create', compact('employees'));
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'level'       => 'required|string',
-            'offense'     => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'date'        => 'required|date',
-        ]);
+        // If the user is an employee, force employee_id to their own record.
+        if (auth()->user()->isEmployee()) {
+            $employee = auth()->user()->employee;
+            if (! $employee) {
+                abort(403);
+            }
 
-        $data['status']        = 'open';
-        $data['issued_by']     = auth()->id();
-        $data['offense_count'] = Violation::where('employee_id', $data['employee_id'])->count() + 1;
+            $data = $request->validate([
+                'level' => 'required|string',
+                'offense' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'date' => 'required|date',
+            ]);
 
-        Violation::create($data);
+            $data['employee_id'] = $employee->id;
+        } else {
+            $data = $request->validate([
+                'employee_id' => 'required|exists:employees,id',
+                'level' => 'required|string',
+                'offense' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'date' => 'required|date',
+            ]);
+        }
+
+        $data['status'] = 'open';
+        $data['issued_by'] = auth()->id();
+
+        DB::transaction(function () use ($data) {
+            // Lock existing rows for this employee to serialize concurrent inserts.
+            $data['offense_count'] = Violation::where('employee_id', $data['employee_id'])
+                ->lockForUpdate()
+                ->count() + 1;
+
+            Violation::create($data);
+        });
 
         return redirect()->route('violations.index')
             ->with('success', 'Violation recorded.');
@@ -68,12 +121,15 @@ class ViolationController extends Controller
     public function resolve(Violation $violation)
     {
         $violation->update(['status' => 'resolved']);
+
         return back()->with('success', 'Violation marked as resolved.');
     }
 
-    public function destroy(Violation $violation)
+    public function destroy($id)
     {
+        $violation = Violation::findOrFail($id);
         $violation->delete();
+
         return back()->with('success', 'Violation deleted.');
     }
 }

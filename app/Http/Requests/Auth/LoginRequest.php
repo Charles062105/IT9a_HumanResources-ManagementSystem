@@ -38,8 +38,9 @@ class LoginRequest extends FormRequest
      *
      * @throws ValidationException
      */
-    public function authenticate(): void
+    public function authenticate()
     {
+
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
@@ -50,7 +51,10 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Account approval gate handled in AuthenticatedSessionController.
+
         RateLimiter::clear($this->throttleKey());
+
     }
 
     /**

@@ -15,35 +15,27 @@ class CheckIncompleteProfile
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip this check for setup-related routes
-        if ($request->routeIs('employees.setup', 'employees.setup.store')) {
-            return $next($request);
-        }
-
-        // Skip for logout, auth, password, profile, and verification routes
-        if ($request->routeIs('logout', 'password.*', 'profile.*', 'verification.*', 'auth.*')) {
-            return $next($request);
-        }
-
+        // Only check for authenticated users who actually loaded a page (not API/AJAX calls)
         $user = Auth::user();
+        if (! $user) {
+            return $next($request);
+        }
 
-        if ($user) {
-            // Admins do not need employee profile completion.
-            if ($user->role === 'admin') {
-                return $next($request);
-            }
+        // Skip for guest-only, auth, password, profile, and verification routes
+        $path = $request->path();
+        if (preg_match('/^(login|register|forgot-password|reset-password|verify-email|profile|logout|employees\/setup)/', $path)) {
+            return $next($request);
+        }
 
-            // Employees must have an employee record.
-            if (!$user->employee) {
-                return redirect()->route('employees.setup', ['user' => $user->id])
-                    ->with('info', 'Please complete your employee profile to continue.');
-            }
+        // Admins do not need employee profile completion.
+        if ($user->role === 'admin') {
+            return $next($request);
+        }
 
-            // Employee record exists but is not marked complete.
-            if (!$user->employee->profile_completed) {
-                return redirect()->route('employees.setup', ['user' => $user->id])
-                    ->with('info', 'Please complete your employee profile to continue.');
-            }
+        // Employees must have an employee record and completed profile.
+        if (! $user->employee || ! $user->employee->profile_completed) {
+            return redirect()->route('employees.setup', ['user' => $user->id])
+                ->with('info', 'Please complete your employee profile to continue.');
         }
 
         return $next($request);
