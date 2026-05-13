@@ -12,8 +12,13 @@ class NotificationController extends Controller
         $query = HrmsNotification::latest();
 
         if ($t = $request->type) {
+            if ($t === 'danger') {
+                $t = 'error';
+            }
+
             $query->where('type', $t);
         }
+
         if ($r = $request->read) {
             if ($r === 'unread') {
                 $query->where('is_read', false);
@@ -38,8 +43,12 @@ class NotificationController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'message' => 'required|string',
-            'type' => 'required|in:success,warning,error,info',
+            'type' => 'required|in:success,warning,error,info,danger',
         ]);
+
+        if ($data['type'] === 'danger') {
+            $data['type'] = 'error';
+        }
 
         HrmsNotification::create($data + ['is_read' => false]);
 

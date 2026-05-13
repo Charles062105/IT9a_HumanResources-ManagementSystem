@@ -3,7 +3,7 @@
 <div class="page-header">
     <div>
         <div class="page-header-title">Send Notification</div>
-        <div class="page-header-sub">Broadcast a system-wide alert</div>
+        <div class="page-header-sub">Broadcast a system-wide alert to all employees.</div>
     </div>
     <a href="{{ route('notifications.index') }}" class="btn-secondary">← Back</a>
 </div>
@@ -20,7 +20,7 @@
                     <option value="info"    {{ old('type') == 'info'    ? 'selected' : '' }}>Info (Blue)</option>
                     <option value="success" {{ old('type') == 'success' ? 'selected' : '' }}>Success (Green)</option>
                     <option value="warning" {{ old('type') == 'warning' ? 'selected' : '' }}>Warning (Amber)</option>
-                    <option value="danger"  {{ old('type') == 'danger'  ? 'selected' : '' }}>Danger (Red)</option>
+                    <option value="error"   {{ in_array(old('type'), ['error','danger']) ? 'selected' : '' }}>Danger (Red)</option>
                 </select>
                 @error('type')<div class="error-msg">{{ $message }}</div>@enderror
             </div>

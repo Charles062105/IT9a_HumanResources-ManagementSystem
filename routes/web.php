@@ -45,7 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('performance', PerformanceController::class);
     Route::resource('notifications', NotificationController::class);
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
-    Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
 
     // Leave approval actions used by dashboard/leaves views
     Route::middleware('admin')->group(function () {
