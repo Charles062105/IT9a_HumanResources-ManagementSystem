@@ -33,7 +33,7 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('users.revoke-admin', $user) }}" id="revokeRoleForm" data-user-name="{{ $user->name }}" data-user-role="{{ ucfirst(str_replace('_', ' ', $user->role)) }}">
+<form method="POST" action="{{ route('users.revoke-admin', $user) }}" id="revokeRoleForm" data-user-name="{{ $user->name }}" data-user-role="{{ ucfirst(str_replace('_', ' ', $user->role)) }}" data-submit-url="{{ route('users.revoke-admin', $user) }}" >
             @csrf
             @method('PATCH')
 

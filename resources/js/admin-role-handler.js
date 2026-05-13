@@ -85,10 +85,15 @@ export class AdminRoleHandler {
    */
   static setupRevokeAdminSubmit(form) {
     form.addEventListener('submit', async (e) => {
+      // Prevent repeated submits / double handlers causing long loading
+      if (form.dataset.submitting === '1') {
+        e.preventDefault();
+        return;
+      }
+
       e.preventDefault();
 
       const userName = form.dataset.userName || 'this user';
-      const userRole = form.dataset.userRole || 'Admin';
 
       const confirmed = await ConfirmDialog.show(
         'Revoke Admin Role',
@@ -102,6 +107,7 @@ export class AdminRoleHandler {
          </ul>
          <p>This action cannot be easily undone. Do you want to proceed?</p>`,
         () => {
+          form.dataset.submitting = '1';
           LoadingOverlay.show('Revoking admin role...');
           form.submit();
         }

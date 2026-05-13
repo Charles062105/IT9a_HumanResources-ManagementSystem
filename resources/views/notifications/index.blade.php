@@ -6,10 +6,15 @@
         <div class="page-header-sub">System alerts, approvals, and announcements</div>
     </div>
     <div class="page-header-actions">
-        <form method="POST" action="{{ route('notifications.read-all') }}">
-            @csrf @method('PATCH')
-            <button class="btn-secondary" type="submit">Mark all read</button>
-        </form>
+        @if($hasUnread)
+            <form method="POST" action="{{ route('notifications.read-all') }}">
+                @csrf @method('PATCH')
+                <button class="btn-secondary" type="submit">Mark all read</button>
+            </form>
+        @else
+            <span class="text-muted">All notifications are already read.</span>
+        @endif
+
         @if(auth()->user()->isAdmin())
             <a href="{{ route('notifications.create') }}" class="btn-primary">
                 + Send Notification

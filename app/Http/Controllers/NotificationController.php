@@ -29,8 +29,9 @@ class NotificationController extends Controller
         }
 
         $notifications = $query->paginate(25)->appends($request->all());
+        $hasUnread = HrmsNotification::where('is_read', false)->exists();
 
-        return view('notifications.index', compact('notifications'));
+        return view('notifications.index', compact('notifications', 'hasUnread'));
     }
 
     public function create()

@@ -20,7 +20,7 @@
                     <option value="info"    {{ old('type') == 'info'    ? 'selected' : '' }}>Info (Blue)</option>
                     <option value="success" {{ old('type') == 'success' ? 'selected' : '' }}>Success (Green)</option>
                     <option value="warning" {{ old('type') == 'warning' ? 'selected' : '' }}>Warning (Amber)</option>
-                    <option value="error"   {{ in_array(old('type'), ['error','danger']) ? 'selected' : '' }}>Danger (Red)</option>
+                    <option value="error"   {{ old('type') == 'error' ? 'selected' : '' }}>Danger (Red)</option>
                 </select>
                 @error('type')<div class="error-msg">{{ $message }}</div>@enderror
             </div>
