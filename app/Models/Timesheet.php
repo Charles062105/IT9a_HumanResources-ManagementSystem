@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Timesheet extends Model
 {
     protected $fillable = [
         'employee_id', 'week_start', 'week_end', 'week_label',
-        'total_hours', 'ot_hours', 'notes', 'status', 'approved_by', 'submitted_at',
+        'total_hours', 'ot_hours', 'notes', 'rejection_reason', 'status', 'approved_by', 'submitted_at',
         'assigned_timesheet_id',
     ];
 
@@ -18,17 +19,17 @@ class Timesheet extends Model
         'submitted_at' => 'datetime',
     ];
 
-    public function employee()
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }
 
-    public function approver()
+    public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function assignedTimesheet()
+    public function assignedTimesheet(): BelongsTo
     {
         return $this->belongsTo(AssignedTimesheet::class);
     }

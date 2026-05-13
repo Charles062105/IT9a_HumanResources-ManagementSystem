@@ -97,8 +97,9 @@ class EmployeeController extends Controller
         $shifts = Shift::orderBy('name')->get();
         $departments = Employee::distinct()->pluck('department')->sort();
         $positions = Employee::distinct()->pluck('position')->sort();
+        $roles = ['employee', 'sub_admin', 'super_admin'];
 
-        return view('employees.edit', compact('employee', 'shifts', 'departments', 'positions'));
+        return view('employees.edit', compact('employee', 'shifts', 'departments', 'positions', 'roles'));
     }
 
     public function update(Request $request, Employee $employee)
@@ -158,6 +159,34 @@ class EmployeeController extends Controller
 
         return redirect()->route('employees.index')
             ->with('success', 'Employee reactivated.');
+    }
+
+    public function updateRole(Request $request, Employee $employee)
+    {
+        if (! auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage roles.');
+        }
+
+        $validated = $request->validate([
+            'role' => 'required|in:employee,sub_admin,super_admin',
+        ]);
+
+        // Create or update user if doesn't exist
+        if (! $employee->user) {
+            $employee->user()->create([
+                'name' => $employee->full_name,
+                'email' => $employee->email,
+                'password' => bcrypt('default-password-change-required'),
+                'role' => $validated['role'],
+                'status' => 'active',
+            ]);
+        } else {
+            $employee->user->update(['role' => $validated['role']]);
+        }
+
+        AuditService::logUpdate($employee, ['role' => $employee->user->role], "Role updated to {$validated['role']}");
+
+        return redirect()->back()->with('success', "Role updated to {$validated['role']}.");
     }
 
     public function destroy(Employee $employee)

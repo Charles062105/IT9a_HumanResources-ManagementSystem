@@ -156,13 +156,4 @@ class AttendanceController extends Controller
         return redirect()->route('attendance.index')
             ->with('success', 'Attendance record updated.');
     }
-
-    public function destroy(Attendance $attendance)
-    {
-        $this->authorize('delete', $attendance);
-
-        $attendance->delete();
-
-        return back()->with('success', 'Record deleted.');
-    }
 }

@@ -71,7 +71,6 @@
         @if($violation->status === 'open')
         <button type="button" class="btn-success" style="padding:8px 16px" onclick="openResolveModal()">Mark as Resolved</button>
         @endif
-        <button type="button" class="btn-danger" style="padding:8px 16px" onclick="openDeleteModal()">Delete Violation</button>
     </div>
     @endif
 </div>
@@ -99,29 +98,6 @@
     </div>
 </div>
 
-{{-- Delete Modal --}}
-<div id="deleteModal" class="modal-overlay">
-    <div class="modal-dialog" style="max-width:400px">
-        <div class="modal-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Delete Violation
-        </div>
-        <div class="modal-body">
-            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
-                Delete <strong style="color:var(--text)">{{ $violation->employee?->full_name }}</strong>'s violation<br>
-                "<em style="color:var(--text)">{{ $violation->offense }}</em>"?<br><br>This action cannot be undone.
-            </p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-deny" onclick="closeDeleteModal()">Cancel</button>
-            <form method="POST" action="{{ route('violations.destroy', $violation) }}" style="display:inline">
-                @csrf @method('DELETE')
-                <button type="submit" class="btn-danger" style="padding:8px 16px">Delete</button>
-            </form>
-        </div>
-    </div>
-</div>
-
 @push('scripts')
 <script>
 function openResolveModal() {
@@ -132,16 +108,8 @@ function closeResolveModal() {
     var m = document.getElementById('resolveModal');
     m.style.display = 'none'; m.classList.remove('show');
 }
-function openDeleteModal() {
-    var m = document.getElementById('deleteModal');
-    m.style.display = 'flex'; m.classList.add('show');
-}
-function closeDeleteModal() {
-    var m = document.getElementById('deleteModal');
-    m.style.display = 'none'; m.classList.remove('show');
-}
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeResolveModal(); closeDeleteModal(); }
+    if (e.key === 'Escape') { closeResolveModal(); }
 });
 </script>
 @endpush

@@ -5,9 +5,16 @@
         <div class="page-header-title">{{ $employee->full_name }}</div>
         <div class="page-header-sub">{{ $employee->employee_id }} · {{ $employee->department }} · {{ $employee->position }}</div>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         @if(auth()->user()->isAdmin())
-        <a href="{{ route('employees.edit', $employee) }}" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:12px">Edit</a>
+            <a href="{{ route('employees.edit', $employee) }}" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:12px">Edit</a>
+        @endif
+        @if(auth()->user()->isSuperAdmin() && $employee->user)
+            @if(! $employee->user->isAdmin())
+                <a href="{{ route('users.make-admin', $employee->user) }}" class="btn-primary btn-sm">Make Admin</a>
+            @else
+                <a href="{{ route('users.revoke-admin-form', $employee->user) }}" class="btn-danger btn-sm">Revoke Admin</a>
+            @endif
         @endif
         <a href="{{ route('employees.index') }}" class="btn-secondary">← Back</a>
     </div>
@@ -31,12 +38,20 @@
             <div style="font-size:11px;color:var(--text3)">{{ $employee->years_of_service }} year{{ $employee->years_of_service != 1 ? 's' : '' }} of service</div>
         </div>
         <div style="border-top:1px solid var(--border);padding:14px 18px">
-            @php $fields = [['Employee ID','employee_id'],['Email','email'],['Phone','phone'],['Date Hired','date_hired'],['Date of Birth','date_of_birth'],['Contract Expiry','contract_expiry']]; @endphp
+            @php $fields = [['Employee ID','employee_id'],['Email','email'],['Phone','phone'],['Date Hired','date_hired'],['Date of Birth','date_of_birth'],['Contract Expiry','contract_expiry'],['System Role','user.role']]; @endphp
             @foreach($fields as [$label, $field])
             <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px">
                 <span style="color:var(--text3)">{{ $label }}</span>
                 <span style="font-weight:500;color:var(--text)">
-                    @if(in_array($field,['date_hired','date_of_birth','contract_expiry']))
+                    @if($field === 'user.role')
+                        @if($employee->user)
+                            <span class="role-badge" data-role="{{ $employee->user->role }}">
+                                {{ ucfirst(str_replace('_', ' ', $employee->user->role)) }}
+                            </span>
+                        @else
+                            <span class="role-badge" data-role="unassigned">No Account</span>
+                        @endif
+                    @elseif(in_array($field,['date_hired','date_of_birth','contract_expiry']))
                         {{ $employee->$field?->format('M j, Y') ?? '—' }}
                     @else
                         {{ $employee->$field ?? '—' }}

@@ -196,7 +196,6 @@
                     <td>
                         <div class="table-actions">
                             <a href="{{ route('attendance.edit', $r) }}" class="notif-action-btn notif-action-btn-read" style="padding:3px 9px;font-size:10px;border-radius:5px;text-decoration:none">Edit</a>
-                            <button type="button" class="notif-action-btn notif-action-btn-delete" style="padding:3px 9px;font-size:10px" onclick="confirmDelete({{ $r->id }}, '{{ $r->employee?->full_name }}', '{{ $r->date->format('M j, Y') }}')">Delete</button>
                         </div>
                     </td>
                     @endif
@@ -219,29 +218,6 @@
     @endif
 </div>
 
-{{-- Delete Confirmation Modal --}}
-<div id="deleteModal" class="modal-overlay">
-    <div class="modal-dialog" style="max-width:400px">
-        <div class="modal-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Delete Attendance Record
-        </div>
-        <div class="modal-body">
-            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
-                Are you sure you want to delete <strong id="delName" style="color:var(--text)"></strong>'s record for <strong id="delDate" style="color:var(--text)"></strong>?<br><br>This action cannot be undone.
-            </p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-deny" onclick="closeDeleteModal()">Cancel</button>
-            <form id="deleteForm" method="POST" style="display:inline">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn-danger" style="padding:8px 16px">Delete</button>
-            </form>
-        </div>
-    </div>
-</div>
-
 @push('scripts')
 <script>
 // Set time inputs to local time
@@ -261,24 +237,6 @@ document.querySelectorAll('[data-clock-form]').forEach(function(form) {
             btn.textContent = 'Processing...';
         }
     });
-});
-
-// Delete modal
-function confirmDelete(id, name, date) {
-    document.getElementById('delName').textContent = name;
-    document.getElementById('delDate').textContent = date;
-
-    var modal = document.getElementById('deleteModal');
-    modal.classList.add('show');
-
-    document.getElementById('deleteForm').action = '{{ route('attendance.destroy', '__ID__') }}'.replace('__ID__', id);
-}
-function closeDeleteModal() {
-    var modal = document.getElementById('deleteModal');
-    modal.classList.remove('show');
-}
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeDeleteModal();
 });
 </script>
 @endpush

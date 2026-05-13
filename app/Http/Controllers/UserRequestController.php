@@ -128,7 +128,29 @@ class UserRequestController extends Controller
             'reference_notes' => $validated['notes'] ?? 'No notes provided',
         ]);
 
-        return redirect()->back()->with('success', "{$user->name} is now a {$roleLabel}".($validated['notes'] ? '. Reason: '.$validated['notes'] : '.'));
+        return redirect()->back()->with('success', "{$user->name} is now a {$roleLabel}".($validated['notes'] ?? false ? '. Reason: '.$validated['notes'] : '.'));
+    }
+
+    public function showRevokeAdmin(User $user)
+    {
+        // Only super admin can revoke admin roles
+        if (! auth()->user()?->isSuperAdmin()) {
+            abort(403, 'Only Super Admin can revoke admin roles.');
+        }
+
+        if (auth()->id() === $user->id) {
+            abort(403, 'Cannot revoke your own admin role.');
+        }
+
+        // Prevent revoking if it's the last super admin
+        if ($user->isSuperAdmin()) {
+            $superAdminCount = User::where('role', User::ROLE_SUPER_ADMIN)->count();
+            if ($superAdminCount <= 1) {
+                abort(403, 'Cannot revoke the last Super Admin in the system.');
+            }
+        }
+
+        return view('requests.revoke-admin', compact('user'));
     }
 
     public function revokeAdmin(User $user)

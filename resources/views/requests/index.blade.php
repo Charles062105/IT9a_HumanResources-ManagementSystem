@@ -48,17 +48,17 @@
                 @forelse($requests as $req)
                 <tr>
                     <td>
-                        <div style="display:flex;align-items:center;gap:8px">
+                        <div class="emp-avatar">
                             <div class="av av-sm av-info">{{ strtoupper(substr($req->user?->name ?? '?', 0, 2)) }}</div>
                             <span class="td-bold">{{ $req->user?->name }}</span>
                         </div>
                     </td>
                     <td class="td-muted">{{ $req->user?->email }}</td>
                     <td>
-                        <div style="display:flex;align-items:center;gap:6px">
+                        <div class="request-type-badge">
                             {{ $req->type }}
                             @if($req->type === 'Account Activation')
-                            <span style="font-size:10px;background:var(--purple-lt);color:var(--purple);padding:1px 6px;border-radius:4px;font-weight:500">→ profile</span>
+                            <span class="badge-meta">→ profile</span>
                             @endif
                         </div>
                     </td>
@@ -70,13 +70,13 @@
                     <td class="td-muted">{{ $req->created_at->format('M j, Y') }}</td>
                     <td>
                         @if($req->status === 'pending')
-                        <div class="table-actions">
+                        <div class="action-group">
                             @if($req->type === 'Account Activation')
-                                <button type="button" class="notif-action-btn notif-action-btn-read" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="openApproveModal({{ $req->id }}, @js($req->user?->name))">Approve & setup</button>
+                                <button type="button" class="action-link action-primary" onclick="openApproveModal({{ $req->id }}, @js($req->user?->name))">Approve & setup</button>
                             @else
-                                <button type="button" class="notif-action-btn notif-action-btn-read" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="openApproveModal({{ $req->id }}, @js($req->user?->name))">Approve</button>
+                                <button type="button" class="action-link action-primary" onclick="openApproveModal({{ $req->id }}, @js($req->user?->name))">Approve</button>
                             @endif
-                            <button type="button" class="notif-action-btn notif-action-btn-delete" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="openRejectModal({{ $req->id }}, @js($req->user?->name))">Reject</button>
+                            <button type="button" class="action-link action-danger" onclick="openRejectModal({{ $req->id }}, @js($req->user?->name))">Reject</button>
                         </div>
                         @else
                         <span class="td-muted" style="font-size:11px">
@@ -107,22 +107,22 @@
 
 {{-- Approve Modal --}}
 <div id="approveModal" class="modal-overlay">
-    <div class="modal-dialog" style="max-width:400px">
+    <div class="modal-dialog">
         <div class="modal-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
             Approve Request
         </div>
         <div class="modal-body">
-            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
-                Approve <strong id="aprName" style="color:var(--text)"></strong>'s request?<br>
-                <span id="aprNote" style="font-size:12px;color:var(--text3)"></span>
+            <p class="modal-message">
+                Approve <strong id="aprName"></strong>'s request?<br>
+                <span id="aprNote" class="modal-note"></span>
             </p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn-deny" onclick="closeApproveModal()">Cancel</button>
-            <form id="approveForm" method="POST" style="display:inline">
+            <button type="button" class="btn-secondary" onclick="closeApproveModal()">Cancel</button>
+            <form id="approveForm" method="POST" class="form-inline">
                 @csrf @method('PATCH')
-                <button type="submit" class="btn-success" style="padding:8px 16px">Approve</button>
+                <button type="submit" class="btn-success">Approve</button>
             </form>
         </div>
     </div>
@@ -130,21 +130,21 @@
 
 {{-- Reject Modal --}}
 <div id="rejectModal" class="modal-overlay">
-    <div class="modal-dialog" style="max-width:400px">
+    <div class="modal-dialog">
         <div class="modal-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             Reject Request
         </div>
         <div class="modal-body">
-            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
-                Reject <strong id="rejName" style="color:var(--text)"></strong>'s request?
+            <p class="modal-message">
+                Reject <strong id="rejName"></strong>'s request?
             </p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn-deny" onclick="closeRejectModal()">Cancel</button>
-            <form id="rejectForm" method="POST" style="display:inline">
+            <button type="button" class="btn-secondary" onclick="closeRejectModal()">Cancel</button>
+            <form id="rejectForm" method="POST" class="form-inline">
                 @csrf @method('PATCH')
-                <button type="submit" class="btn-danger" style="padding:8px 16px">Reject</button>
+                <button type="submit" class="btn-danger">Reject</button>
             </form>
         </div>
     </div>

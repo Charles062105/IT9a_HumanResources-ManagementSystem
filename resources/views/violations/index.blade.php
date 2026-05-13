@@ -88,7 +88,6 @@
                             @if($v->status === 'open')
                                 <button type="button" class="notif-action-btn notif-action-btn-read" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="openResolveModal({{ $v->id }}, '{{ addslashes($v->employee?->full_name) }}', '{{ addslashes($v->offense) }}')">Resolve</button>
                             @endif
-                            <button type="button" class="notif-action-btn notif-action-btn-delete" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="confirmDelete({{ $v->id }}, '{{ addslashes($v->employee?->full_name) }}', '{{ addslashes($v->offense) }}')">Delete</button>
                         </div>
                     </td>
                     @endif
@@ -130,29 +129,6 @@
     </div>
 </div>
 
-{{-- Delete Modal --}}
-<div id="deleteModal" class="modal-overlay">
-    <div class="modal-dialog" style="max-width:400px">
-        <div class="modal-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Delete Violation
-        </div>
-        <div class="modal-body">
-            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
-                Delete <strong id="delName" style="color:var(--text)"></strong>'s violation<br>
-                "<em id="delOffense" style="color:var(--text)"></em>"?<br><br>This action cannot be undone.
-            </p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-deny" onclick="closeDeleteModal()">Cancel</button>
-            <form id="deleteForm" method="POST" style="display:inline">
-                @csrf @method('DELETE')
-                <button type="submit" class="btn-danger" style="padding:8px 16px">Delete</button>
-            </form>
-        </div>
-    </div>
-</div>
-
 @push('scripts')
 <script>
 function openResolveModal(id, name, offense) {
@@ -167,20 +143,8 @@ function closeResolveModal() {
     m.style.display = 'none'; m.classList.remove('show');
 }
 
-function confirmDelete(id, name, offense) {
-    document.getElementById('delName').textContent = name;
-    document.getElementById('delOffense').textContent = offense;
-    var m = document.getElementById('deleteModal');
-    m.style.display = 'flex'; m.classList.add('show');
-    document.getElementById('deleteForm').action = '{{ route('violations.destroy', '__ID__') }}'.replace('__ID__', id);
-}
-function closeDeleteModal() {
-    var m = document.getElementById('deleteModal');
-    m.style.display = 'none'; m.classList.remove('show');
-}
-
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeResolveModal(); closeDeleteModal(); }
+    if (e.key === 'Escape') { closeResolveModal(); }
 });
 </script>
 @endpush

@@ -133,15 +133,4 @@ class ViolationController extends Controller
 
         return back()->with('success', 'Violation marked as resolved.');
     }
-
-    public function destroy(Violation $violation)
-    {
-        if (! Auth::user()->isAdmin()) {
-            abort(403, 'Only admins can delete violations.');
-        }
-
-        $violation->delete();
-
-        return back()->with('success', 'Violation deleted.');
-    }
 }

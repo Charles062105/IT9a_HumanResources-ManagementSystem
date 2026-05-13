@@ -218,7 +218,7 @@ class LeaveController extends Controller
         HrmsNotification::create([
             'title' => 'Leave Request Denied',
             'message' => "Your {$leave->type} leave request ({$leave->start_date->format('M j')} – {$leave->end_date->format('M j')}) has been denied.",
-            'type' => 'danger',
+            'type' => 'error',
             'user_id' => optional($leave->employee)->user_id,
         ]);
 

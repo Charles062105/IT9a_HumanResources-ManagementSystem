@@ -71,6 +71,14 @@
         @endif
     </div>
 
+    @if($timesheet->rejection_reason && $timesheet->status === 'rejected')
+    <div class="divider"></div>
+    <div class="form-group" style="margin-bottom:0">
+        <label>Rejection Reason</label>
+        <div style="font-size:13px;color:var(--text);line-height:1.7;padding:6px 0;white-space:pre-wrap">{{ $timesheet->rejection_reason }}</div>
+    </div>
+    @endif
+
     @if($timesheet->notes)
     <div class="divider"></div>
     <div class="form-group" style="margin-bottom:0">

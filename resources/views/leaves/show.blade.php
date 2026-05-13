@@ -3,7 +3,7 @@
 <div class="page-header">
     <div>
         <div class="page-header-title">{{ ucfirst($leave->type) }} Leave</div>
-        <div class="page-header-sub">{{ $leave->employee?->full_name }} · {{ $leave->start_date->format('M j, Y') }} to {{ $leave->end_date->format('M j, Y') }}</div>
+        <div class="page-header-sub">{{ $leave->employee?->full_name }} · {{ $leave->start_date?->format('M j, Y') }} to {{ $leave->end_date?->format('M j, Y') }}</div>
     </div>
     <a href="{{ route('leaves.index') }}" class="btn-secondary">← Back</a>
 </div>

@@ -92,13 +92,9 @@
                                 <a href="{{ route('timesheets.show', $r) }}" class="notif-action-btn notif-action-btn-read">View</a>
 
                             @if($r->status === 'pending')
-onclick="openApproveModal({{ $r->id }}, @js($r->employee?->full_name), @js($r->week_label))"
-
-onclick="openRejectModal({{ $r->id }}, @js($r->employee?->full_name), @js($r->week_label))"
-
+                                <button type="button" class="notif-action-btn notif-action-btn-read" onclick="openApproveModal({{ $r->id }}, @js($r->employee?->full_name), @js($r->week_label))">Approve</button>
+                                <button type="button" class="notif-action-btn notif-action-btn-read" onclick="openRejectModal({{ $r->id }}, @js($r->employee?->full_name), @js($r->week_label))">Reject</button>
                             @endif
-onclick="confirmDelete({{ $r->id }}, @js($r->employee?->full_name), @js($r->week_label))"
-
                         </div>
                     </td>
                     @endif
@@ -163,29 +159,6 @@ onclick="confirmDelete({{ $r->id }}, @js($r->employee?->full_name), @js($r->week
     </div>
 </div>
 
-{{-- Delete Confirmation Modal --}}
-<div id="deleteModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-hidden="true" tabindex="-1">
-    <div class="modal-dialog" style="max-width:400px">
-        <div class="modal-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <h3 id="deleteModalTitle" style="margin:0">Delete Timesheet</h3>
-        </div>
-        <div class="modal-body">
-            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
-                Are you sure you want to delete <strong id="delName" style="color:var(--text)"></strong>'s timesheet for <strong id="delWeek" style="color:var(--text)"></strong>?<br><br>This action cannot be undone.
-            </p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-deny" onclick="closeDeleteModal()">Cancel</button>
-            <form id="deleteForm" method="POST" style="display:inline" data-delete-action="{{ route('timesheets.destroy', '__ID__') }}">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn-danger" style="padding:8px 16px">Delete</button>
-            </form>
-        </div>
-    </div>
-</div>
-
 @push('scripts')
 <script>
 function openApproveModal(id, name, week) {
@@ -236,28 +209,9 @@ document.getElementById('rejectForm').addEventListener('submit', function() {
     document.getElementById('rejectReasonInput').value = document.getElementById('rejectReason').value;
 });
 
-function confirmDelete(id, name, week) {
-    document.getElementById('delName').textContent = name;
-    document.getElementById('delWeek').textContent = week;
-
-    var m = document.getElementById('deleteModal');
-    m.classList.add('show');
-    m.setAttribute('aria-hidden', 'false');
-
-document.getElementById('deleteForm').action = document.getElementById('deleteForm').dataset.deleteAction.replace('__ID__', id);
-
-    var first = m.querySelector('button[type="submit"], button');
-    if (first) first.focus();
-}
-function closeDeleteModal() {
-    var m = document.getElementById('deleteModal');
-    m.classList.remove('show');
-    m.setAttribute('aria-hidden', 'true');
-}
-
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        closeApproveModal(); closeRejectModal(); closeDeleteModal();
+        closeApproveModal(); closeRejectModal();
     }
 });
 </script>

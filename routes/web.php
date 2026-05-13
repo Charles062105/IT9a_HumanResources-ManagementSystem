@@ -54,6 +54,9 @@ Route::middleware('auth')->group(function () {
         Route::patch('employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate');
         Route::patch('employees/{employee}/activate', [EmployeeController::class, 'activate'])->name('employees.activate');
 
+        // Role management (super admin only)
+        Route::patch('employees/{employee}/role', [EmployeeController::class, 'updateRole'])->name('employees.update-role')->middleware('super_admin');
+
         // Batch employee operations
         Route::post('employees/batch/deactivate', [EmployeeController::class, 'batchDeactivate'])->name('employees.batch-deactivate');
         Route::post('employees/batch/export', [EmployeeController::class, 'batchExport'])->name('employees.batch-export');
@@ -75,6 +78,7 @@ Route::middleware('auth')->group(function () {
         Route::middleware('super_admin')->group(function () {
             Route::get('users/{user}/make-admin', [UserRequestController::class, 'makeAdmin'])->name('users.make-admin');
             Route::patch('users/{user}/assign-admin-role', [UserRequestController::class, 'assignAdminRole'])->name('users.assign-admin-role');
+            Route::get('users/{user}/revoke-admin', [UserRequestController::class, 'showRevokeAdmin'])->name('users.revoke-admin-form');
             Route::patch('users/{user}/revoke-admin', [UserRequestController::class, 'revokeAdmin'])->name('users.revoke-admin');
         });
     });

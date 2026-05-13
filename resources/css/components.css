@@ -673,6 +673,16 @@
 }
 
 @media (max-width: 768px) {
+  /* Profile and Stats Grid Responsiveness */
+  .profile-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   /* Tablet adjustments */
   .emp-grid {
     grid-template-columns: 1fr !important;
@@ -933,6 +943,91 @@
 
 .av-info {
   background: linear-gradient(135deg, #0066cc, #0052a3);
+}
+
+.av-revoke {
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: white;
+}
+
+/* Profile Grid Layout */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Statistics Grid (KPIs) */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.kpi {
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text3);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.kpi-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.kpi-sub {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* Revoke Admin Section */
+.revoke-admin-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  gap: 16px;
+}
+
+.revoke-admin-warning {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.revoke-admin-warning svg {
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.revoke-admin-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #b45309;
+  margin-bottom: 2px;
+}
+
+.revoke-admin-text {
+  font-size: 12px;
+  color: #92400e;
 }
 
 /* Contract Expiry Badge */
@@ -2006,6 +2101,8 @@ tbody tr:last-child td {
     opacity: 0.5;
   }
 }
+
+.dropdown-item-danger {
   color: var(--danger, #ef4444);
 }
 

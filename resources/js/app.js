@@ -5,6 +5,7 @@ import { FormValidator, Validators, PasswordStrength } from './validations';
 import { ProgressTracker, Toast, ConfirmDialog, LoadingOverlay } from './components';
 import { initAttendanceChart, initLiveClock } from './chart-init';
 import './form-handlers';
+import './admin-role-handler';
 
 window.Alpine = Alpine;
 window.FormValidator = FormValidator;

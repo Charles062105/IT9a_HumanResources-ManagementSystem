@@ -54,6 +54,13 @@ class NotificationController extends Controller
         return back();
     }
 
+    public function update(HrmsNotification $notification)
+    {
+        $notification->update(['is_read' => true]);
+
+        return back();
+    }
+
     public function readAll()
     {
         HrmsNotification::where('is_read', false)->update(['is_read' => true]);

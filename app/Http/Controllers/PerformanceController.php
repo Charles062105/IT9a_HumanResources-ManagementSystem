@@ -137,15 +137,4 @@ class PerformanceController extends Controller
 
         return view('performance.show', compact('performance'));
     }
-
-    public function destroy(Performance $performance)
-    {
-        if (! auth()->user()->isAdmin()) {
-            abort(403, 'Only admins can delete performance reviews.');
-        }
-
-        $performance->delete();
-
-        return back()->with('success', 'Record deleted.');
-    }
 }
