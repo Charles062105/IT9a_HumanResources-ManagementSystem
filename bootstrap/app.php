@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Middleware\CheckIncompleteProfile;
+use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsEmployee;
+use App\Http\Middleware\SuperAdminOnly;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,9 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => IsAdmin::class,
             'employee' => IsEmployee::class,
+            'super_admin' => SuperAdminOnly::class,
+            'permission' => CheckPermission::class,
         ]);
-        // DISABLED: Causes redirect loop - needs more investigation
-        // $middleware->web(append: CheckIncompleteProfile::class);
+        $middleware->web(append: CheckIncompleteProfile::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

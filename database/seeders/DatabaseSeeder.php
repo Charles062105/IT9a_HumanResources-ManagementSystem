@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\HrmsNotification;
 use App\Models\Leave;
 use App\Models\Performance;
+use App\Models\Shift;
 use App\Models\Timesheet;
 use App\Models\User;
 use App\Models\UserRequest;
@@ -19,6 +20,9 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Shifts
+        $this->call(ShiftSeeder::class);
+
         // Admin
         // Use updateOrCreate to avoid duplicate unique-email seeding issues.
         $admin = User::updateOrCreate(
@@ -26,7 +30,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Maria Admin',
                 'password' => Hash::make('password'),
-                'role' => 'admin',
+                'role' => 'super_admin',
                 'status' => 'active',
             ]
         );
@@ -88,6 +92,14 @@ class DatabaseSeeder extends Seeder
         }
 
         $employees = Employee::all();
+        $shifts = Shift::all();
+
+        // Assign shifts to employees
+        if ($shifts->count() > 0) {
+            foreach ($employees as $index => $emp) {
+                $emp->update(['shift_id' => $shifts[$index % $shifts->count()]->id]);
+            }
+        }
 
         // Attendance — 7 days
         foreach ($employees as $emp) {
@@ -156,14 +168,22 @@ class DatabaseSeeder extends Seeder
         // Notifications
         HrmsNotification::insert([
             ['title' => 'Leave request from Pedro Bautista', 'message' => 'Vacation leave Jul 16–18 awaiting approval.', 'type' => 'info', 'is_read' => false, 'user_id' => $admin->id, 'created_at' => now(), 'updated_at' => now()],
-            ['title' => 'New violation — Carlo Reyes', 'message' => 'Written Warning: Habitual tardiness, 2nd offense.', 'type' => 'danger', 'is_read' => false, 'user_id' => $admin->id, 'created_at' => now()->subHour(), 'updated_at' => now()],
+            ['title' => 'New violation — Carlo Reyes', 'message' => 'Written Warning: Habitual tardiness, 2nd offense.', 'type' => 'error', 'is_read' => false, 'user_id' => $admin->id, 'created_at' => now()->subHour(), 'updated_at' => now()],
             ['title' => 'Account approval pending — Bea Ramos', 'message' => 'New user registration awaiting admin approval.', 'type' => 'warning', 'is_read' => false, 'user_id' => $admin->id, 'created_at' => now()->subHours(3), 'updated_at' => now()],
             ['title' => 'Leave approved — Jose Mendoza', 'message' => 'Vacation Jul 7–11 has been approved.', 'type' => 'success', 'is_read' => true, 'user_id' => $employees[4]->user_id, 'created_at' => now()->subDay(), 'updated_at' => now()],
             ['title' => 'Work anniversary — Juan dela Cruz', 'message' => 'Celebrating 5 years today!', 'type' => 'success', 'is_read' => true, 'user_id' => $employees[0]->user_id, 'created_at' => now()->subHours(8), 'updated_at' => now()],
         ]);
 
         // Pending user requests
-        $pendingUser = User::create(['name' => 'Bea Ramos', 'email' => 'bea.ramos@hrms.ph', 'password' => Hash::make('password'), 'role' => 'employee', 'status' => 'pending']);
+        $pendingUser = User::updateOrCreate(
+            ['email' => 'bea.ramos@hrms.ph'],
+            [
+                'name' => 'Bea Ramos',
+                'password' => Hash::make('password'),
+                'role' => 'employee',
+                'status' => 'pending',
+            ]
+        );
         UserRequest::create(['user_id' => $pendingUser->id, 'type' => 'Account Activation', 'details' => 'New employee registration', 'status' => 'pending']);
         UserRequest::create(['user_id' => $employees[1]->user_id, 'type' => 'Role Change', 'details' => 'Staff → Supervisor', 'status' => 'pending']);
     }

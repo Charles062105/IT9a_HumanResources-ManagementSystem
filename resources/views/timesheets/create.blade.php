@@ -9,6 +9,7 @@
 </div>
 
 <div class="form-card">
+    <div class="form-title">New Timesheet Submission</div>
     <form method="POST" action="{{ route('timesheets.store') }}">
         @csrf
 
@@ -53,6 +54,23 @@
                 <input type="number" name="ot_hours" value="{{ old('ot_hours', 0) }}" min="0" step="0.5" placeholder="0">
             </div>
         </div>
+
+        @if($pendingTasks->count())
+        <div class="form-row full">
+            <div class="form-group">
+                <label>Link to Assigned Task (optional)</label>
+                <select name="assigned_timesheet_id">
+                    <option value="">— General Work (no task linked) —</option>
+                    @foreach($pendingTasks as $task)
+                        <option value="{{ $task->id }}" {{ old('assigned_timesheet_id') == $task->id ? 'selected' : '' }}>
+                            {{ $task->title }} (due {{ $task->due_date->format('M j') }})
+                        </option>
+                    @endforeach
+                </select>
+                @error('assigned_timesheet_id')<div class="error-msg">{{ $message }}</div>@enderror
+            </div>
+        </div>
+        @endif
 
         <div class="form-row full">
             <div class="form-group">

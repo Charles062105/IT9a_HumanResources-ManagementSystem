@@ -55,13 +55,51 @@ class PerformanceController extends Controller
     public function create()
     {
         // Only admins can create performance reviews
-        if (auth()->user()->isEmployee()) {
-            abort(403, 'Unauthorized: Employees cannot create performance reviews.');
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized: Only admins can create performance reviews.');
         }
 
         $employees = Employee::where('status', 'active')->orderBy('first_name')->get();
 
         return view('performance.create', compact('employees'));
+    }
+
+    public function edit(Performance $performance)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized: Only admins can edit performance reviews.');
+        }
+
+        $employees = Employee::where('status', 'active')->orderBy('first_name')->get();
+
+        return view('performance.edit', compact('performance', 'employees'));
+    }
+
+    public function update(Request $request, Performance $performance)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized: Only admins can update performance reviews.');
+        }
+
+        $data = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'period' => 'required|string|max:50',
+            'score' => 'required|numeric|min:0|max:10',
+            'feedback' => 'nullable|string',
+        ]);
+
+        $score = (float) $data['score'];
+        $data['rating'] = match (true) {
+            $score >= 9.0 => 'Outstanding',
+            $score >= 7.0 => 'Satisfactory',
+            $score >= 5.0 => 'Needs Improvement',
+            default => 'Poor',
+        };
+
+        $performance->update($data);
+
+        return redirect()->route('performance.index')
+            ->with('success', 'Performance review updated.');
     }
 
     public function store(Request $request)
@@ -90,11 +128,22 @@ class PerformanceController extends Controller
 
     public function show(Performance $performance)
     {
+        if (auth()->user()->isEmployee()) {
+            $employee = auth()->user()->employee;
+            if (! $employee || $employee->id !== $performance->employee_id) {
+                abort(403, 'Unauthorized.');
+            }
+        }
+
         return view('performance.show', compact('performance'));
     }
 
     public function destroy(Performance $performance)
     {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins can delete performance reviews.');
+        }
+
         $performance->delete();
 
         return back()->with('success', 'Record deleted.');

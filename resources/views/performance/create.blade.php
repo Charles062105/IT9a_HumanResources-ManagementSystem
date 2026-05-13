@@ -9,6 +9,7 @@
 </div>
 
 <div class="form-card">
+    <div class="form-title">New Performance Review</div>
     <form method="POST" action="{{ route('performance.store') }}">
         @csrf
 

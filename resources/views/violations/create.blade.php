@@ -9,6 +9,7 @@
 </div>
 
 <div class="form-card">
+    <div class="form-title">Log New Violation</div>
     <form method="POST" action="{{ route('violations.store') }}">
         @csrf
 

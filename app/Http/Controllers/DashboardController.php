@@ -102,13 +102,19 @@ class DashboardController extends Controller
     {
         $currentEmployee = $user->employee;
 
-        // If no employee record, show basic view
+        // If no employee record, show basic view with default stats
         if (! $currentEmployee) {
             return view('dashboard.employee', [
                 'todayAttendance' => null,
                 'currentEmployee' => null,
                 'myLeaves' => collect(),
                 'myViolations' => collect(),
+                'presentDays' => 0,
+                'absentDays' => 0,
+                'totalWorkDays' => 0,
+                'chartDays' => collect(),
+                'chartPresent' => collect(),
+                'chartAbsent' => collect(),
             ]);
         }
 
@@ -140,15 +146,19 @@ class DashboardController extends Controller
         $totalWorkDays = $myAttendanceStats->count();
 
         // 7-day personal attendance chart
+        $sevenDaysAgo = $today->copy()->subDays(6);
+        $weekAttendance = Attendance::where('employee_id', $currentEmployee->id)
+            ->whereBetween('date', [$sevenDaysAgo, $today])
+            ->get()
+            ->keyBy(fn ($a) => Carbon::parse($a->date)->toDateString());
+
         $chartDays = collect();
         $chartPresent = collect();
         $chartAbsent = collect();
         for ($i = 6; $i >= 0; $i--) {
-            $day = Carbon::today()->subDays($i);
+            $day = $today->copy()->subDays($i);
             $chartDays->push($day->format('D j'));
-            $attendance = Attendance::where('employee_id', $currentEmployee->id)
-                ->whereDate('date', $day)
-                ->first();
+            $attendance = $weekAttendance->get($day->toDateString());
 
             if ($attendance) {
                 $isPresent = in_array($attendance->status, ['present', 'late']) ? 1 : 0;

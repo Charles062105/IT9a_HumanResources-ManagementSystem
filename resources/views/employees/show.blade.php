@@ -13,7 +13,7 @@
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start">
+<div class="profile-grid">
 
     {{-- Profile Card --}}
     <div class="card">
@@ -60,7 +60,7 @@
     <div style="display:flex;flex-direction:column;gap:14px">
 
         {{-- Quick Stats --}}
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div class="stats-grid">
             <div class="kpi">
                 <div class="kpi-label">Attendance (30d)</div>
                 <div class="kpi-num">{{ $employee->attendances->where('date','>=',now()->subDays(30))->whereIn('status',['present','late'])->count() }}</div>

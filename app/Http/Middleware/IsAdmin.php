@@ -11,11 +11,15 @@ class IsAdmin
 {
     /**
      * Handle an incoming request.
-     * Only allow admin users to proceed.
+     * Only allow users whose role is exactly 'admin' to proceed.
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->isAdmin()) {
+        if (! Auth::check()) {
+            abort(401, 'Unauthenticated.');
+        }
+
+        if (Auth::user()->isAdmin()) {
             return $next($request);
         }
 

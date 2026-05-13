@@ -11,8 +11,8 @@ class Attendance extends Model
     ];
 
     protected $casts = [
-        'date'     => 'date',
-        'time_in'  => 'datetime',
+        'date' => 'date',
+        'time_in' => 'datetime',
         'time_out' => 'datetime',
     ];
 
@@ -23,7 +23,10 @@ class Attendance extends Model
 
     public function getHoursWorkedAttribute()
     {
-        if (!$this->time_in || !$this->time_out) return null;
-        return round($this->time_in->diffInMinutes($this->time_out) / 60, 1);
+        if (! $this->time_in || ! $this->time_out) {
+            return null;
+        }
+
+        return round($this->time_in->diffInMinutes($this->time_out) / 60, 2);
     }
 }

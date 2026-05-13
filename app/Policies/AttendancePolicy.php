@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Attendance;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class AttendancePolicy
 {
@@ -13,7 +12,8 @@ class AttendancePolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        // Both admins and employees can view attendance records
+        return true;
     }
 
     /**
@@ -21,7 +21,8 @@ class AttendancePolicy
      */
     public function view(User $user, Attendance $attendance): bool
     {
-        return false;
+        // Admin can view any record; employee can only view their own
+        return $user->isAdmin() || ($user->employee?->id === $attendance->employee_id);
     }
 
     /**
@@ -29,7 +30,8 @@ class AttendancePolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        // Only employees can record their own time
+        return $user->isEmployee() && $user->employee !== null;
     }
 
     /**
@@ -37,7 +39,8 @@ class AttendancePolicy
      */
     public function update(User $user, Attendance $attendance): bool
     {
-        return false;
+        // Only admin or the employee themselves can update
+        return $user->isAdmin() || ($user->employee?->id === $attendance->employee_id);
     }
 
     /**
@@ -45,7 +48,8 @@ class AttendancePolicy
      */
     public function delete(User $user, Attendance $attendance): bool
     {
-        return false;
+        // Only admin can delete
+        return $user->isAdmin();
     }
 
     /**
@@ -53,7 +57,8 @@ class AttendancePolicy
      */
     public function restore(User $user, Attendance $attendance): bool
     {
-        return false;
+        // Only admin can restore
+        return $user->isAdmin();
     }
 
     /**
@@ -61,6 +66,7 @@ class AttendancePolicy
      */
     public function forceDelete(User $user, Attendance $attendance): bool
     {
-        return false;
+        // Only admin can force delete
+        return $user->isAdmin();
     }
 }

@@ -6,10 +6,10 @@
         <div class="page-header-sub">Employee performance reviews and ratings</div>
     </div>
     <div style="display:flex;gap:8px">
-        <a href="{{ route('performance.my') }}" class="btn-secondary">My Reviews</a>
         @if(auth()->user()->isAdmin())
-        <a href="{{ route('performance.create') }}" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:12px">
-            + Add Review
+        <a href="{{ route('performance.create') }}" class="btn-primary" style="text-decoration:none">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;margin-right:4px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Review
         </a>
         @endif
     </div>
@@ -39,7 +39,9 @@
             @endforeach
         </select>
         <button type="submit" class="fbtn">Apply</button>
-        <a href="{{ route('performance.index') }}" class="fbtn ghost">Reset</a>
+        @if(request()->anyFilled(['search','department','period','rating']))
+            <a href="{{ route('performance.index') }}" class="fbtn ghost">Reset</a>
+        @endif
         <span class="f-results">{{ $records->total() }} records</span>
     </form>
 
@@ -55,6 +57,9 @@
                     <th>Feedback</th>
                     <th>Reviewer</th>
                     <th>Date</th>
+                    @if(auth()->user()->isAdmin())
+                    <th>Actions</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -62,7 +67,7 @@
                 <tr>
                     <td>
                         <div style="display:flex;align-items:center;gap:8px">
-                            <div class="av" style="background:#DBEAFE;color:#1E40AF;width:28px;height:28px;font-size:10px">{{ $r->employee?->initials }}</div>
+                            <div class="av" style="background:#DBEAFE;color:#1E40AF">{{ $r->employee?->initials }}</div>
                             <span class="td-bold">{{ $r->employee?->full_name }}</span>
                         </div>
                     </td>
@@ -70,7 +75,7 @@
                     <td class="td-muted">{{ $r->period }}</td>
                     <td>
                         <div style="display:flex;align-items:center;gap:7px">
-                            <div class="p-bar"><div class="p-fill" style="width:{{ $r->score_pct }}%"></div></div>
+                            <div class="p-bar"><div class="p-fill" style="width:{{ $r->score_pct ?? 0 }}%"></div></div>
                             <span class="td-bold">{{ $r->score }}</span>
                         </div>
                     </td>
@@ -85,12 +90,25 @@
                         @endphp
                         <span class="sp {{ $sc }}"><span class="d"></span>{{ $r->rating }}</span>
                     </td>
-                    <td class="td-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ $r->feedback ?? '—' }}</td>
-                    <td class="td-muted">{{ $r->reviewer?->name }}</td>
+                    <td class="td-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ $r->feedback ?? '' }}">{{ $r->feedback ?? '—' }}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:5px">
+                            <div class="av av-xs" style="background:#EDE9FE;color:#6D28D9;font-size:8px">{{ strtoupper(substr($r->reviewer?->name ?? '?', 0, 2)) }}</div>
+                            <span class="td-muted">{{ $r->reviewer?->name ?? '—' }}</span>
+                        </div>
+                    </td>
                     <td class="td-muted">{{ $r->created_at->format('M j, Y') }}</td>
+                    @if(auth()->user()->isAdmin())
+                    <td>
+                        <div class="table-actions">
+                            <a href="{{ route('performance.edit', $r) }}" class="notif-action-btn notif-action-btn-read" style="padding:3px 9px;font-size:10px;border-radius:5px;text-decoration:none">Edit</a>
+                            <button type="button" class="notif-action-btn notif-action-btn-delete" style="padding:3px 9px;font-size:10px" onclick="confirmDelete({{ $r->id }}, '{{ $r->employee?->full_name }}', '{{ $r->period }}')">Delete</button>
+                        </div>
+                    </td>
+                    @endif
                 </tr>
                 @empty
-                <tr><td colspan="8"><div class="empty-state">No performance records found</div></td></tr>
+                <tr><td colspan="{{ auth()->user()->isAdmin() ? '9' : '8' }}"><div class="empty-state">No performance records found</div></td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -99,5 +117,47 @@
         <div class="pagination-wrap">{{ $records->links() }}</div>
     @endif
 </div>
+
+{{-- Delete Confirmation Modal --}}
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-dialog" style="max-width:400px">
+        <div class="modal-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Delete Performance Review
+        </div>
+        <div class="modal-body">
+            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
+                Are you sure you want to delete <strong id="delRecordName" style="color:var(--text)"></strong>'s review for <strong id="delRecordPeriod" style="color:var(--text)"></strong>?<br><br>This action cannot be undone.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-deny" onclick="closeDeleteModal()">Cancel</button>
+            <form id="deleteForm" method="POST" style="display:inline">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn-danger" style="padding:8px 16px">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function confirmDelete(id, name, period) {
+    document.getElementById('delRecordName').textContent = name;
+    document.getElementById('delRecordPeriod').textContent = period;
+    document.getElementById('deleteForm').action = '{{ route('performance.destroy', '__ID__') }}'.replace('__ID__', id);
+    document.getElementById('deleteModal').classList.add('show');
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+    document.getElementById('deleteModal').style.display = 'none';
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDeleteModal();
+});
+</script>
+@endpush
 
 </x-app-layout>

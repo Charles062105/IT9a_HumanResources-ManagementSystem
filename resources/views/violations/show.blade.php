@@ -5,96 +5,145 @@
         <div class="page-header-title">Violation Details</div>
         <div class="page-header-sub">Disciplinary record and resolution tracking</div>
     </div>
-    <a href="{{ route('violations.index') }}" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:12px">
-        ← Back
-    </a>
+    <a href="{{ route('violations.index') }}" class="btn-secondary">← Back</a>
 </div>
 
-<div class="section-card">
-    @php $badge = $violation->level_badge_color; @endphp
-    
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-bottom:24px">
-        <!-- Employee Info -->
-        <div>
-            <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Employee</div>
-            <div style="font-size:15px;font-weight:600;color:#1F2937">{{ $violation->employee?->full_name }}</div>
-            <div style="font-size:12px;color:#6B7280;margin-top:4px">{{ $violation->employee?->department }}</div>
-        </div>
+<div class="form-card">
+    <div class="form-title">Record Details</div>
 
-        <!-- Violation Level -->
-        <div>
-            <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Discipline Level</div>
-            <span class="sp" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }};border-radius:5px;display:inline-block;padding:6px 12px;font-weight:500">
-                {{ $violation->level }}
-            </span>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div class="form-group">
+            <label>Employee</label>
+            <div style="display:flex;align-items:center;gap:8px;padding-top:4px">
+                <div class="av av-sm" style="background:#FEE2E2;color:#991B1B;font-size:9px">{{ $violation->employee?->initials }}</div>
+                <div>
+                    <div style="font-size:13px;font-weight:500;color:var(--text)">{{ $violation->employee?->full_name ?? '—' }}</div>
+                    <div style="font-size:11px;color:var(--text3)">{{ $violation->employee?->department }}</div>
+                </div>
+            </div>
         </div>
-
-        <!-- Status -->
-        <div>
-            <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Status</div>
+        <div class="form-group">
+            <label>Discipline Level</label>
+            @php $badge = $violation->level_badge_color; @endphp
+            <div style="padding-top:4px">
+                <span class="sp" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }};border-radius:5px;display:inline-block;padding:6px 12px;font-weight:500">{{ $violation->level }}</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Status</label>
             @php $sc = $violation->status === 'open' ? 'sp-open' : 'sp-ok'; @endphp
-            <span class="sp {{ $sc }}" style="display:inline-flex;align-items:center;gap:6px">
-                <span class="d"></span>{{ ucfirst($violation->status) }}
-            </span>
+            <div style="padding-top:4px"><span class="sp {{ $sc }}"><span class="d"></span>{{ ucfirst($violation->status) }}</span></div>
         </div>
-
-        <!-- Offense Count -->
-        <div>
-            <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Offense #</div>
-            <span class="vb" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }};display:inline-block;padding:4px 10px;border-radius:5px;font-weight:600">
-                {{ $violation->offense_count }}
-            </span>
+        <div class="form-group">
+            <label>Offense #</label>
+            <div style="padding-top:4px">
+                <span class="vb" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }};display:inline-block;padding:4px 10px;border-radius:5px;font-weight:600">{{ $violation->offense_count }}</span>
+            </div>
         </div>
-
-        <!-- Date -->
-        <div>
-            <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Date</div>
-            <div style="font-size:14px;font-weight:500;color:#1F2937">{{ $violation->date?->format('M j, Y') }}</div>
+        <div class="form-group">
+            <label>Date</label>
+            <div style="font-size:13px;font-weight:500;color:var(--text);padding-top:8px">{{ $violation->date?->format('M j, Y') }}</div>
         </div>
-
-        <!-- Issued By -->
-        <div>
-            <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Issued By</div>
-            <div style="font-size:14px;font-weight:500;color:#1F2937">{{ $violation->issuer?->name }}</div>
+        <div class="form-group">
+            <label>Issued By</label>
+            <div style="font-size:13px;font-weight:500;color:var(--text);padding-top:8px">{{ $violation->issuer?->name ?? 'Admin' }}</div>
         </div>
     </div>
 
-    <div style="border-top:1px solid #E5E7EB;padding-top:20px">
-        <!-- Offense -->
-        <div style="margin-bottom:20px">
-            <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Offense</div>
-            <div style="font-size:14px;color:#1F2937;font-weight:500">{{ $violation->offense }}</div>
-        </div>
+    <div class="divider"></div>
 
-        <!-- Description -->
-        @if($violation->description)
-        <div style="margin-bottom:20px">
-            <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Description</div>
-            <div style="font-size:13px;color:#4B5563;line-height:1.6;white-space:pre-wrap">{{ $violation->description }}</div>
-        </div>
-        @endif
+    <div class="form-group">
+        <label>Offense</label>
+        <div style="font-size:14px;color:var(--text);font-weight:500;padding:6px 0">{{ $violation->offense }}</div>
     </div>
 
-    <!-- Actions -->
+    @if($violation->description)
+    <div class="divider"></div>
+    <div class="form-group" style="margin-bottom:0">
+        <label>Description</label>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap;padding:6px 0">{{ $violation->description }}</div>
+    </div>
+    @endif
+
     @if(auth()->user()->isAdmin())
-    <div style="border-top:1px solid #E5E7EB;padding-top:20px;margin-top:20px;display:flex;gap:12px">
+    <div class="divider"></div>
+    <div style="display:flex;gap:10px">
         @if($violation->status === 'open')
-        <form method="POST" action="{{ route('violations.resolve', $violation) }}" style="display:inline">
-            @csrf @method('PATCH')
-            <button type="submit" class="btn-primary" style="padding:8px 16px;border-radius:7px;font-size:12px;border:none;cursor:pointer">
-                Mark as Resolved
-            </button>
-        </form>
+        <button type="button" class="btn-success" style="padding:8px 16px" onclick="openResolveModal()">Mark as Resolved</button>
         @endif
-
-        <form method="POST" action="{{ route('violations.destroy', $violation) }}" style="display:inline" onsubmit="return confirm('Are you sure you want to delete this violation?')">
-            @csrf @method('DELETE')
-            <button type="submit" class="btn-danger" style="padding:8px 16px;border-radius:7px;font-size:12px;border:none;cursor:pointer;background-color:#FEE2E2;color:#991B1B">
-                Delete
-            </button>
-        </form>
+        <button type="button" class="btn-danger" style="padding:8px 16px" onclick="openDeleteModal()">Delete Violation</button>
     </div>
     @endif
 </div>
+
+{{-- Resolve Modal --}}
+<div id="resolveModal" class="modal-overlay">
+    <div class="modal-dialog" style="max-width:400px">
+        <div class="modal-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Mark as Resolved
+        </div>
+        <div class="modal-body">
+            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
+                Mark <strong style="color:var(--text)">{{ $violation->employee?->full_name }}</strong>'s violation<br>
+                "<em style="color:var(--text)">{{ $violation->offense }}</em>" as resolved?
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-deny" onclick="closeResolveModal()">Cancel</button>
+            <form method="POST" action="{{ route('violations.resolve', $violation) }}" style="display:inline">
+                @csrf @method('PATCH')
+                <button type="submit" class="btn-success" style="padding:8px 16px">Resolve</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Delete Modal --}}
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-dialog" style="max-width:400px">
+        <div class="modal-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Delete Violation
+        </div>
+        <div class="modal-body">
+            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
+                Delete <strong style="color:var(--text)">{{ $violation->employee?->full_name }}</strong>'s violation<br>
+                "<em style="color:var(--text)">{{ $violation->offense }}</em>"?<br><br>This action cannot be undone.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-deny" onclick="closeDeleteModal()">Cancel</button>
+            <form method="POST" action="{{ route('violations.destroy', $violation) }}" style="display:inline">
+                @csrf @method('DELETE')
+                <button type="submit" class="btn-danger" style="padding:8px 16px">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function openResolveModal() {
+    var m = document.getElementById('resolveModal');
+    m.style.display = 'flex'; m.classList.add('show');
+}
+function closeResolveModal() {
+    var m = document.getElementById('resolveModal');
+    m.style.display = 'none'; m.classList.remove('show');
+}
+function openDeleteModal() {
+    var m = document.getElementById('deleteModal');
+    m.style.display = 'flex'; m.classList.add('show');
+}
+function closeDeleteModal() {
+    var m = document.getElementById('deleteModal');
+    m.style.display = 'none'; m.classList.remove('show');
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeResolveModal(); closeDeleteModal(); }
+});
+</script>
+@endpush
 
 </x-app-layout>

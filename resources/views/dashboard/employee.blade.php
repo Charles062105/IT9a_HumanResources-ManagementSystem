@@ -11,7 +11,6 @@
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
             <span>Request leave</span>
         </a>
-
         <a href="{{ route('timesheets.index') }}" class="qa">
             <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
             <span>View timesheets</span>
@@ -21,59 +20,62 @@
 
 {{-- LIVE CLOCK & TIME IN/OUT --}}
 @if($currentEmployee)
-<div style="margin:20px 0">
-    <div class="card" style="background:linear-gradient(135deg, #667EEA 0%, #764BA2 100%);color:white;padding:24px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap">
-            <div>
-                <div style="font-size:13px;opacity:0.9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Your Clock</div>
-                <div style="font-size:48px;font-weight:700;font-family:monospace;letter-spacing:2px" id="live-clock">{{ now()->format('H:i:s') }}</div>
-                <div style="font-size:13px;opacity:0.9;margin-top:8px">{{ now()->format('l, F j, Y') }}</div>
+<div class="clock-card-wrap" style="margin:20px 0">
+    <div class="clock-card">
+        <div class="clock-card-inner" style="display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap">
+            <div class="clock-info" style="animation:slideInLeft 0.6s ease-out">
+                <div class="clock-label">Your Clock</div>
+                <div class="clock-time-big" id="live-clock">{{ now()->format('H:i:s') }}</div>
+                <div class="clock-date">{{ now()->format('l, F j, Y') }}</div>
             </div>
 
-            <div style="flex:1;min-width:280px">
+            <div class="clock-section">
                 @if($todayAttendance)
                     @if($todayAttendance->time_in && !$todayAttendance->time_out)
-                        <div style="text-align:center;margin-bottom:16px">
-                            <div style="font-size:13px;opacity:0.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Status</div>
-                            <div style="font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px">
-                                <span class="pulse-dot" style="display:inline-block;width:8px;height:8px;background:#4ADE80;border-radius:50%;animation:pulse 2s infinite"></span>
+                        <div class="clock-panel clock-panel-bordered">
+                            <div class="clock-panel-label">Status</div>
+                            <div class="clock-status-text" style="display:flex;align-items:center;justify-content:center;gap:8px">
+                                <span class="clock-panel-success-dot"></span>
                                 Clocked In
                             </div>
-                            <div style="font-size:12px;opacity:0.85;margin-top:4px">Since {{ $todayAttendance->time_in->format('H:i A') }}</div>
+                            <div class="clock-panel-sub">Since {{ $todayAttendance->time_in->format('H:i A') }}</div>
                         </div>
-                        <form method="POST" action="{{ route('attendance.time-out') }}" style="display:flex;gap:8px">
+                        <form method="POST" action="{{ route('attendance.time-out') }}" class="clock-form">
                             @csrf
-                            <button type="submit" class="btn-danger" style="flex:1;padding:12px;border:none;cursor:pointer;background:white;color:#764BA2;font-weight:600;border-radius:8px;font-size:13px">
-                                🔴 Time Out
-                            </button>
+                            <input type="time" name="time" class="clock-time-input" value="{{ now()->format('H:i') }}">
+                            <button type="submit" class="clock-btn clock-btn-timeout">Time Out</button>
                         </form>
                     @elseif($todayAttendance->time_in && $todayAttendance->time_out)
-                        <div style="text-align:center">
-                            <div style="font-size:13px;opacity:0.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Status</div>
-                            <div style="font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px">
-                                <span style="display:inline-block;width:8px;height:8px;background:#9CA3AF;border-radius:50%"></span>
+                        <div class="clock-panel clock-panel-bordered">
+                            <div class="clock-panel-label">Status</div>
+                            <div class="clock-status-text" style="display:flex;align-items:center;justify-content:center;gap:8px">
+                                <span class="clock-panel-gray-dot"></span>
                                 Clocked Out
                             </div>
-                            <div style="font-size:12px;opacity:0.85;margin-bottom:12px">
-                                In: {{ $todayAttendance->time_in->format('H:i A') }} • Out: {{ $todayAttendance->time_out->format('H:i A') }}<br>
-                                <strong>Total: {{ $todayAttendance->hours_worked ?? 0 }}h</strong>
+                            <div class="clock-panel-sub">
+                                <div style="margin-bottom:8px">In: <strong>{{ $todayAttendance->time_in->format('H:i A') }}</strong> &middot; Out: <strong>{{ $todayAttendance->time_out->format('H:i A') }}</strong></div>
+                                <div class="clock-hours-total">Total: {{ $todayAttendance->hours_worked ?? 0 }}h worked</div>
                             </div>
                         </div>
                     @else
-                        <div style="text-align:center">
-                            <div style="font-size:13px;opacity:0.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Status</div>
-                            <div style="font-size:18px;font-weight:600;margin-bottom:12px">Not Started</div>
-                            <form method="POST" action="{{ route('attendance.time-in') }}" style="display:flex">
+                        <div class="clock-panel">
+                            <div class="clock-panel-label">Status</div>
+                            <div class="clock-status-text" style="color:#FCD34D;font-size:18px">Not Started</div>
+                            <form method="POST" action="{{ route('attendance.time-in') }}" class="clock-form" style="align-items:center">
                                 @csrf
-                                <button type="submit" class="btn-success" style="flex:1;padding:12px;border:none;cursor:pointer;background:white;color:#667EEA;font-weight:600;border-radius:8px;font-size:13px">
-                                    🟢 Time In
-                                </button>
+                                <input type="time" name="time" class="clock-time-input" value="{{ now()->format('H:i') }}">
+                                <button type="submit" class="clock-btn clock-btn-timein">Clock In</button>
                             </form>
                         </div>
                     @endif
                 @else
-                    <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.1);border-radius:8px">
-                        <div style="font-size:12px;opacity:0.9">No attendance record yet</div>
+                    <div class="clock-panel clock-panel-dashed">
+                        <div class="clock-panel-label" style="font-size:12px">No attendance record yet</div>
+                        <form method="POST" action="{{ route('attendance.time-in') }}" class="clock-form" style="align-items:center">
+                            @csrf
+                            <input type="time" name="time" class="clock-time-input" value="{{ now()->format('H:i') }}">
+                            <button type="submit" class="clock-btn clock-btn-timein" style="padding:12px">Clock In Now</button>
+                        </form>
                     </div>
                 @endif
             </div>
@@ -89,16 +91,18 @@
             <div class="ki" style="background:#EFF6FF"><svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
             Present Days
         </div>
-        <div class="kpi-num">{{ $presentDays }}</div>
+        <div class="kpi-num">{{ $presentDays ?? 0 }}</div>
         <div class="kpi-sub">Last 30 days</div>
-        <div class="kpi-delta delta-up">✓ Tracked</div>
+        <div class="kpi-delta {{ ($presentDays ?? 0) == 0 ? 'delta-down' : 'delta-up' }}">
+            {{ ($presentDays ?? 0) == 0 ? '⚠ Review' : '✓ Tracked' }}
+        </div>
     </div>
     <div class="kpi">
         <div class="kpi-label">
             <div class="ki" style="background:#FEF2F2"><svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg></div>
             Absent Days
         </div>
-        <div class="kpi-num" style="{{ $absentDays > 0 ? 'color:var(--danger)' : '' }}">{{ $absentDays }}</div>
+        <div class="kpi-num" style="{{ $absentDays > 0 ? 'color:var(--danger)' : 'color:var(--success)' }}">{{ $absentDays }}</div>
         <div class="kpi-sub">Last 30 days</div>
         <div class="kpi-delta {{ $absentDays > 5 ? 'delta-down' : 'delta-up' }}">
             {{ $absentDays > 5 ? '↑ High' : '✓ Good' }}
@@ -151,18 +155,18 @@
         </div>
         @forelse($myLeaves as $leave)
         <div class="leave-item">
-            <div class="av" style="background:#DBEAFE;color:#1E40AF">{{ $currentEmployee->initials ?? 'N/A' }}</div>
+            <div class="av av-info">{{ $currentEmployee->initials ?? 'N/A' }}</div>
             <div>
                 <div style="font-size:12px;font-weight:500">{{ ucfirst($leave->type) }}</div>
-                <div style="font-size:10px;color:var(--text3)">{{ $leave->days }}d · {{ $leave->start_date->format('M j') }}–{{ $leave->end_date->format('M j') }}</div>
+                <div style="font-size:10px;color:var(--text3)">{{ $leave->days }}d &middot; {{ $leave->start_date->format('M j') }}&ndash;{{ $leave->end_date->format('M j') }}</div>
             </div>
             <div class="l-acts">
                 @if($leave->status === 'pending')
-                    <span class="td-muted" style="background:#FEF3C7;color:#92400E;padding:4px 8px;border-radius:4px">Pending</span>
+                    <span class="sp sp-pend"><span class="d"></span>Pending</span>
                 @elseif($leave->status === 'approved')
-                    <span class="td-muted" style="background:#F0FDF4;color:#166534;padding:4px 8px;border-radius:4px">Approved</span>
+                    <span class="sp sp-ok"><span class="d"></span>Approved</span>
                 @else
-                    <span class="td-muted" style="background:#FEE2E2;color:#991B1B;padding:4px 8px;border-radius:4px">Denied</span>
+                    <span class="sp sp-no"><span class="d"></span>Denied</span>
                 @endif
             </div>
         </div>
@@ -189,13 +193,13 @@
                 <div class="vb" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }}">{{ $badge['label'] }}</div>
                 <div>
                     <div style="font-size:12px;font-weight:500">{{ $v->offense }}</div>
-                    <div style="font-size:10px;color:var(--text3)">{{ $v->level }} · {{ $v->date->format('M j, Y') }}</div>
+                    <div style="font-size:10px;color:var(--text3)">{{ $v->level }} &middot; {{ $v->date->format('M j, Y') }}</div>
                 </div>
                 <div class="l-acts">
                     @if($v->status === 'open')
-                        <span class="td-muted" style="background:#FEE2E2;color:#991B1B;padding:4px 8px;border-radius:4px">Open</span>
+                        <span class="sp sp-open">Open</span>
                     @else
-                        <span class="td-muted" style="background:#F0FDF4;color:#166534;padding:4px 8px;border-radius:4px">Resolved</span>
+                        <span class="sp sp-ok"><span class="d"></span>Resolved</span>
                     @endif
                 </div>
             </div>
@@ -207,61 +211,13 @@
 </div>
 
 @push('scripts')
-<style>
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-    .pulse-dot { animation: pulse 2s infinite !important; }
-</style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-// Live Clock Update
-function updateClock() {
-    const clockEl = document.getElementById('live-clock');
-    if (clockEl) {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        clockEl.textContent = `${hours}:${minutes}:${seconds}`;
-    }
-}
-// Update clock every second
-updateClock();
-setInterval(updateClock, 1000);
-
-// Chart initialization
-new Chart(document.getElementById('attendChart'), {
-    type: 'line',
-    data: {
-        labels: {!! json_encode($chartDays) !!},
-        datasets: [
-            {
-                label: 'Present',
-                data: {!! json_encode($chartPresent) !!},
-                borderColor: '#0F1E38', backgroundColor: 'rgba(15,30,56,0.06)',
-                fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2,
-                pointBackgroundColor: '#0F1E38'
-            },
-            {
-                label: 'Absent',
-                data: {!! json_encode($chartAbsent) !!},
-                borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.05)',
-                fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2,
-                borderDash: [4,3], pointBackgroundColor: '#DC2626'
-            }
-        ]
-    },
-    options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' } },
-            y: { grid: { color: 'rgba(15,30,56,0.04)' }, border: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' }, min: 0 }
-        }
-    }
-});
+// Set chart data for auto-init via app.js / chart-init.js
+window.__chartData = {
+    labels: {!! json_encode($chartDays) !!},
+    present: {!! json_encode($chartPresent) !!},
+    absent: {!! json_encode($chartAbsent) !!}
+};
 </script>
 @endpush
 

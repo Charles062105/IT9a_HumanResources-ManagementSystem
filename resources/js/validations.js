@@ -69,7 +69,10 @@ export const Validators = {
  */
 export class FormValidator {
   constructor(formSelector, rules = {}) {
-    this.form = document.querySelector(formSelector);
+    // Handle both string selectors and DOM elements
+    this.form = typeof formSelector === 'string' 
+      ? document.querySelector(formSelector) 
+      : formSelector;
     this.rules = rules;
     this.errors = {};
     this.isValid = true;

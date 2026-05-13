@@ -16,11 +16,6 @@
         </div>
     </div>
     <div class="quick-actions">
-        <a href="{{ route('employees.create') }}" class="qa">
-            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-            <span>Onboard hire</span>
-        </a>
-
         <a href="{{ route('violations.create') }}" class="qa">
             <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <span>Log violation</span>
@@ -35,12 +30,12 @@
 {{-- LIVE CLOCK & TIME IN/OUT --}}
 @if($todayAttendance || auth()->user()->employee)
 <div style="margin:20px 0">
-    <div class="card" style="background:linear-gradient(135deg, #667EEA 0%, #764BA2 100%);color:white;padding:24px">
+    <div class="clock-card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap">
             <div>
-                <div style="font-size:13px;opacity:0.9;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Your Clock</div>
+                <div class="clock-label">Your Clock</div>
                 <div style="font-size:48px;font-weight:700;font-family:monospace;letter-spacing:2px" id="live-clock">{{ now()->format('H:i:s') }}</div>
-                <div style="font-size:13px;opacity:0.9;margin-top:8px">{{ now()->format('l, F j, Y') }}</div>
+                <div class="clock-date">{{ now()->format('l, F j, Y') }}</div>
             </div>
 
             <div style="flex:1;min-width:280px">
@@ -54,8 +49,9 @@
                             </div>
                             <div style="font-size:12px;opacity:0.85;margin-top:4px">Since {{ $todayAttendance->time_in->format('H:i A') }}</div>
                         </div>
-                        <form method="POST" action="{{ route('attendance.time-out') }}" style="display:flex;gap:8px">
+                        <form method="POST" action="{{ route('attendance.time-out') }}" style="display:flex;flex-direction:column;gap:8px">
                             @csrf
+                            <input type="time" name="time" value="{{ now()->format('H:i') }}" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:6px;padding:8px 12px;font-size:14px;text-align:center;width:140px;margin:0 auto">
                             <button type="submit" class="btn-danger" style="flex:1;padding:12px;border:none;cursor:pointer;background:white;color:#764BA2;font-weight:600;border-radius:8px;font-size:13px">
                                 🔴 Time Out
                             </button>
@@ -76,9 +72,10 @@
                         <div style="text-align:center">
                             <div style="font-size:13px;opacity:0.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Status</div>
                             <div style="font-size:18px;font-weight:600;margin-bottom:12px">Not Started</div>
-                            <form method="POST" action="{{ route('attendance.time-in') }}" style="display:flex">
+                            <form method="POST" action="{{ route('attendance.time-in') }}" style="display:flex;flex-direction:column;gap:8px;align-items:center">
                                 @csrf
-                                <button type="submit" class="btn-success" style="flex:1;padding:12px;border:none;cursor:pointer;background:white;color:#667EEA;font-weight:600;border-radius:8px;font-size:13px">
+                                <input type="time" name="time" value="{{ now()->format('H:i') }}" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:6px;padding:8px 12px;font-size:14px;text-align:center;width:140px">
+                                <button type="submit" class="btn-success" style="flex:1;padding:12px;border:none;cursor:pointer;background:white;color:#667EEA;font-weight:600;border-radius:8px;font-size:13px;width:100%">
                                     🟢 Time In
                                 </button>
                             </form>
@@ -235,65 +232,11 @@
 </div>
 
 @push('scripts')
-<style>
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-    @keyframes slideIn {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    .pulse-dot { animation: pulse 2s infinite !important; }
-</style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-// Live Clock Update
-function updateClock() {
-    const clockEl = document.getElementById('live-clock');
-    if (clockEl) {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        clockEl.textContent = `${hours}:${minutes}:${seconds}`;
-    }
+initLiveClock('live-clock');
+if (window.__chartData) {
+    initAttendanceChart('attendChart', window.__chartData.labels, window.__chartData.present, window.__chartData.absent);
 }
-// Update clock every second
-updateClock();
-setInterval(updateClock, 1000);
-
-// Chart initialization
-new Chart(document.getElementById('attendChart'), {
-    type: 'line',
-    data: {
-        labels: {!! json_encode($chartDays) !!},
-        datasets: [
-            {
-                label: 'Present',
-                data: {!! json_encode($chartPresent) !!},
-                borderColor: '#0F1E38', backgroundColor: 'rgba(15,30,56,0.06)',
-                fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2,
-                pointBackgroundColor: '#0F1E38'
-            },
-            {
-                label: 'Absent',
-                data: {!! json_encode($chartAbsent) !!},
-                borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.05)',
-                fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2,
-                borderDash: [4,3], pointBackgroundColor: '#DC2626'
-            }
-        ]
-    },
-    options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' } },
-            y: { grid: { color: 'rgba(15,30,56,0.04)' }, border: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' }, min: 0 }
-        }
-    }
-});
 </script>
 @endpush
 

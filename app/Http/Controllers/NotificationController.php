@@ -11,10 +11,16 @@ class NotificationController extends Controller
     {
         $query = HrmsNotification::latest();
 
-        if ($t = $request->type) $query->where('type', $t);
+        if ($t = $request->type) {
+            $query->where('type', $t);
+        }
         if ($r = $request->read) {
-            if ($r === 'unread') $query->where('is_read', false);
-            if ($r === 'read')   $query->where('is_read', true);
+            if ($r === 'unread') {
+                $query->where('is_read', false);
+            }
+            if ($r === 'read') {
+                $query->where('is_read', true);
+            }
         }
 
         $notifications = $query->paginate(25)->appends($request->all());
@@ -30,9 +36,9 @@ class NotificationController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title'   => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'message' => 'required|string',
-            'type'    => 'required|in:success,warning,danger,info',
+            'type' => 'required|in:success,warning,error,info',
         ]);
 
         HrmsNotification::create($data + ['is_read' => false]);
@@ -44,18 +50,21 @@ class NotificationController extends Controller
     public function markRead(HrmsNotification $notification)
     {
         $notification->update(['is_read' => true]);
+
         return back();
     }
 
     public function readAll()
     {
         HrmsNotification::where('is_read', false)->update(['is_read' => true]);
+
         return back()->with('success', 'All notifications marked as read.');
     }
 
     public function destroy(HrmsNotification $notification)
     {
         $notification->delete();
+
         return back()->with('success', 'Notification deleted.');
     }
 }

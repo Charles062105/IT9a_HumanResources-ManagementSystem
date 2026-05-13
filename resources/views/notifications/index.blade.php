@@ -5,13 +5,13 @@
         <div class="page-header-title">Notifications</div>
         <div class="page-header-sub">System alerts, approvals, and announcements</div>
     </div>
-    <div style="display:flex;gap:8px">
-        <form method="POST" action="{{ route('notifications.read-all') }}">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <form method="POST" action="{{ route('notifications.read-all') }}" style="display:inline">
             @csrf @method('PATCH')
             <button class="btn-secondary" type="submit">Mark all read</button>
         </form>
         @if(auth()->user()->isAdmin())
-        <a href="{{ route('notifications.create') }}" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:12px">
+        <a href="{{ route('notifications.create') }}" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">
             + Send Notification
         </a>
         @endif
@@ -34,7 +34,9 @@
             <option value="read"   {{ request('read') == 'read'   ? 'selected' : '' }}>Read only</option>
         </select>
         <button type="submit" class="fbtn">Apply</button>
-        <a href="{{ route('notifications.index') }}" class="fbtn ghost">Reset</a>
+        @if(request()->anyFilled(['type','read']))
+            <a href="{{ route('notifications.index') }}" class="fbtn ghost">Reset</a>
+        @endif
         <span class="f-results">{{ $notifications->total() }} notifications</span>
     </form>
 
@@ -46,8 +48,8 @@
             <div style="width:7px;flex-shrink:0"></div>
         @endif
 
-        <div class="notif-icon" style="background:{{ $n->icon_bg }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="{{ $n->icon_color }}" stroke-width="2" width="14" height="14">
+        <div class="notif-icon" style="background:{{ $n->icon_bg ?? 'var(--info-lt)' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="{{ $n->icon_color ?? 'var(--info)' }}" stroke-width="2" width="14" height="14">
                 @if($n->type === 'success')
                     <polyline points="20 6 9 17 4 12"/>
                 @elseif($n->type === 'warning')
@@ -65,18 +67,22 @@
             <div class="notif-desc">{{ $n->message }}</div>
         </div>
 
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;margin-left:12px">
+        <div class="notif-item-actions">
             <span class="notif-time">{{ $n->created_at->diffForHumans() }}</span>
-            @if(!$n->is_read)
-            <form method="POST" action="{{ route('notifications.read', $n) }}">@csrf @method('PATCH')
-                <button type="submit" style="background:none;border:none;font-size:10px;color:var(--info);cursor:pointer;font-family:inherit;padding:0;font-weight:500">Mark read</button>
-            </form>
-            @endif
-            @if(auth()->user()->isAdmin())
-            <form method="POST" action="{{ route('notifications.destroy', $n) }}" onsubmit="return confirm('Delete this notification?')">@csrf @method('DELETE')
-                <button type="submit" style="background:none;border:none;font-size:10px;color:var(--danger);cursor:pointer;font-family:inherit;padding:0;font-weight:500">Delete</button>
-            </form>
-            @endif
+            <div style="display:flex;gap:12px">
+                @if(!$n->is_read)
+                <form method="POST" action="{{ route('notifications.read', $n) }}" style="display:inline">
+                    @csrf @method('PATCH')
+                    <button type="submit" class="notif-action-btn notif-action-btn-read">Mark read</button>
+                </form>
+                @endif
+                @if(auth()->user()->isAdmin())
+                <form method="POST" action="{{ route('notifications.destroy', $n) }}" style="display:inline" onsubmit="return confirm('Delete this notification?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="notif-action-btn notif-action-btn-delete">Delete</button>
+                </form>
+                @endif
+            </div>
         </div>
     </div>
     @empty

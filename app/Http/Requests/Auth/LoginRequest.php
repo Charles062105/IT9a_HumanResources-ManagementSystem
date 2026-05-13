@@ -51,7 +51,23 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        // Account approval gate handled in AuthenticatedSessionController.
+        // Check user account status
+        $user = Auth::user();
+        if ($user && $user->status === 'pending') {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+            throw ValidationException::withMessages([
+                'email' => 'Your account is pending admin approval. Please wait for notification.',
+            ]);
+        }
+
+        if ($user && ($user->status === 'rejected' || $user->status === 'inactive')) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+            throw ValidationException::withMessages([
+                'email' => 'Your account has been rejected or is inactive. Please contact support.',
+            ]);
+        }
 
         RateLimiter::clear($this->throttleKey());
 

@@ -17,6 +17,9 @@ return new class extends Migration
             $table->enum('status', ['present', 'late', 'absent', 'half_day', 'on_leave'])->default('present');
             $table->text('notes')->nullable();
             $table->timestamps();
+
+            // Prevent duplicate time-in for same employee on same day
+            $table->unique(['employee_id', 'date']);
         });
     }
 

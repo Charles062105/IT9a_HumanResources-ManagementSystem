@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\Shift;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
@@ -15,7 +17,9 @@ class EmployeeController extends Controller
             $query->where(function ($q) use ($s) {
                 $q->where('employee_id', 'like', "%$s%")
                     ->orWhere('first_name', 'like', "%$s%")
-                    ->orWhere('last_name', 'like', "%$s%");
+                    ->orWhere('last_name', 'like', "%$s%")
+                    ->orWhere('email', 'like', "%$s%")
+                    ->orWhere('phone', 'like', "%$s%");
             });
         }
         if ($d = $request->department) {
@@ -37,7 +41,11 @@ class EmployeeController extends Controller
 
     public function create()
     {
-        return view('employees.create');
+        $shifts = Shift::orderBy('name')->get();
+        $departments = Employee::distinct()->pluck('department')->sort();
+        $positions = Employee::distinct()->pluck('position')->sort();
+
+        return view('employees.create', compact('shifts', 'departments', 'positions'));
     }
 
     public function store(Request $request)
@@ -45,25 +53,29 @@ class EmployeeController extends Controller
         $data = $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
-            'email' => 'required|email|unique:employees',
+            'email' => 'required|email|unique:employees|unique:users',
             'department' => 'required|string|max:100',
             'position' => 'required|string|max:100',
-            'date_hired' => 'required|date',
-            'date_of_birth' => 'nullable|date',
+            'date_hired' => 'required|date|before_or_equal:today',
+            'date_of_birth' => 'nullable|date|before:today',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
-            'status' => 'required|in:active,probationary,contractual',
-            'contract_expiry' => 'nullable|date',
-            'sss_number' => 'nullable|string|max:30',
-            'pagibig_number' => 'nullable|string|max:30',
-            'philhealth_number' => 'nullable|string|max:30',
+            'status' => 'required|in:active,probationary,contractual,inactive',
+            'shift_id' => 'nullable|exists:shifts,id',
+            'contract_expiry' => 'required_if:status,contractual|nullable|date|after:today|before:'.now()->addYears(5)->format('Y-m-d'),
+            'sss_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{7}-\d$/',
+            'pagibig_number' => 'nullable|string|max:30|regex:/^\d{4}-\d{4}-\d{4}$/',
+            'philhealth_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{9}-\d$/',
         ]);
 
         // Auto-generate employee ID
         $last = Employee::orderBy('id', 'desc')->first();
         $data['employee_id'] = 'EMP-'.str_pad(($last ? $last->id + 1 : 1), 4, '0', STR_PAD_LEFT);
 
-        Employee::create($data);
+        $employee = Employee::create($data);
+
+        // Log this action
+        AuditService::logCreate($employee, "Created employee: {$employee->full_name}");
 
         return redirect()->route('employees.index')
             ->with('success', 'Employee created successfully.');
@@ -78,29 +90,47 @@ class EmployeeController extends Controller
 
     public function edit(Employee $employee)
     {
-        return view('employees.edit', compact('employee'));
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins can edit employees.');
+        }
+
+        $shifts = Shift::orderBy('name')->get();
+        $departments = Employee::distinct()->pluck('department')->sort();
+        $positions = Employee::distinct()->pluck('position')->sort();
+
+        return view('employees.edit', compact('employee', 'shifts', 'departments', 'positions'));
     }
 
     public function update(Request $request, Employee $employee)
     {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins can update employees.');
+        }
+
+        $oldValues = $employee->getOriginal();
+
         $data = $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
-            'email' => 'required|email|unique:employees,email,'.$employee->id,
+            'email' => 'required|email|unique:employees,email,'.$employee->id.'|unique:users,email',
             'department' => 'required|string|max:100',
             'position' => 'required|string|max:100',
-            'date_hired' => 'required|date',
-            'date_of_birth' => 'nullable|date',
+            'date_hired' => 'required|date|before_or_equal:today',
+            'date_of_birth' => 'nullable|date|before:today',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
-            'status' => 'required|in:active,probationary,contractual',
-            'contract_expiry' => 'nullable|date',
-            'sss_number' => 'nullable|string|max:30',
-            'pagibig_number' => 'nullable|string|max:30',
-            'philhealth_number' => 'nullable|string|max:30',
+            'status' => 'required|in:active,probationary,contractual,inactive',
+            'shift_id' => 'nullable|exists:shifts,id',
+            'contract_expiry' => 'required_if:status,contractual|nullable|date|after:today|before:'.now()->addYears(5)->format('Y-m-d'),
+            'sss_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{7}-\d$/',
+            'pagibig_number' => 'nullable|string|max:30|regex:/^\d{4}-\d{4}-\d{4}$/',
+            'philhealth_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{9}-\d$/',
         ]);
 
         $employee->update($data);
+
+        // Log this action
+        AuditService::logUpdate($employee, $oldValues, "Updated employee: {$employee->full_name}");
 
         return redirect()->route('employees.index')
             ->with('success', 'Employee updated successfully.');
@@ -108,6 +138,10 @@ class EmployeeController extends Controller
 
     public function deactivate(Employee $employee)
     {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins can deactivate employees.');
+        }
+
         $employee->update(['status' => 'inactive']);
 
         return redirect()->route('employees.index')
@@ -116,6 +150,10 @@ class EmployeeController extends Controller
 
     public function activate(Employee $employee)
     {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins can activate employees.');
+        }
+
         $employee->update(['status' => 'active']);
 
         return redirect()->route('employees.index')
@@ -124,9 +162,108 @@ class EmployeeController extends Controller
 
     public function destroy(Employee $employee)
     {
+        // Uses soft delete via SoftDeletes trait
+        // Related records (attendances, leaves, violations, performances, timesheets) are preserved
+        // Use forceDelete() only if hard deletion is explicitly required
         $employee->delete();
 
         return redirect()->route('employees.index')
-            ->with('success', 'Employee permanently deleted.');
+            ->with('success', 'Employee deactivated and soft-deleted.');
+    }
+
+    public function batchDeactivate(Request $request)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins can deactivate employees.');
+        }
+
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return redirect()->route('employees.index')
+                ->with('error', 'No employees selected.');
+        }
+
+        $employees = Employee::whereIn('id', $ids)->where('status', '!=', 'inactive')->get();
+
+        foreach ($employees as $emp) {
+            $emp->update(['status' => 'inactive']);
+            // Log each deactivation
+            AuditService::logDeactivate($emp, "Batch deactivation: {$emp->full_name}");
+        }
+
+        return redirect()->route('employees.index')
+            ->with('success', "Deactivated {$employees->count()} employee(s).");
+    }
+
+    public function batchExport(Request $request)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins can export employee data.');
+        }
+
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return redirect()->route('employees.index')
+                ->with('error', 'No employees selected.');
+        }
+
+        $employees = Employee::with('user')
+            ->whereIn('id', $ids)
+            ->get();
+
+        // Generate CSV content
+        $filename = 'employees_'.now()->format('Y-m-d_His').'.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($employees) {
+            $file = fopen('php://output', 'w');
+
+            // CSV Header
+            fputcsv($file, [
+                'Employee ID',
+                'First Name',
+                'Last Name',
+                'Email',
+                'Department',
+                'Position',
+                'Status',
+                'Date Hired',
+                'Contract Expiry',
+                'Phone',
+                'Date of Birth',
+                'SSS',
+                'Pag-IBIG',
+                'PhilHealth',
+                'Role',
+            ]);
+
+            // CSV Data
+            foreach ($employees as $emp) {
+                fputcsv($file, [
+                    $emp->employee_id,
+                    $emp->first_name,
+                    $emp->last_name,
+                    $emp->email,
+                    $emp->department,
+                    $emp->position,
+                    $emp->status,
+                    $emp->date_hired?->format('Y-m-d') ?? '',
+                    $emp->contract_expiry?->format('Y-m-d') ?? '',
+                    $emp->phone,
+                    $emp->date_of_birth?->format('Y-m-d') ?? '',
+                    $emp->sss_number,
+                    $emp->pagibig_number,
+                    $emp->philhealth_number,
+                    $emp->user?->role ?? '',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

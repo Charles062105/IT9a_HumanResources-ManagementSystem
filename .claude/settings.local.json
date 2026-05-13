@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__laravel-boost__database-schema",
+      "mcp__laravel-boost__database-query",
+      "Bash(php artisan route:list --name=employees --compact)",
+      "mcp__laravel-boost__last-error",
+      "Read(//d C:/Users/irish kaye dibdib/Desktop/laravel/**)",
+      "Bash(vendor/bin/pint --dirty --format agent)",
+      "Bash(php artisan test --compact --filter=Leave)",
+      "Bash(php artisan make:migration create_assigned_timesheets_table --no-interaction)",
+      "Bash(php artisan make:model AssignedTimesheet --no-interaction)",
+      "Bash(php artisan make:migration add_assigned_timesheet_id_to_timesheets_table --no-interaction)",
+      "Bash(php artisan make:controller AssignedTimesheetController --no-interaction)",
+      "Bash(php artisan make:command MarkAbsentEmployees --no-interaction)",
+      "Bash(php artisan schedule:list)",
+      "Bash(php artisan config:show pagination)",
+      "Bash(php artisan tinker --execute \"echo config\\(''app.pagination''\\).'' - ''.config\\(''app.pagination.driver'', ''default''\\);\")",
+      "Bash(php artisan tinker --execute \"echo Illuminate\\\\Support\\\\Facades\\\\Vite::asset\\(''resources/css/app.css'', ''css/app.css''\\);\")",
+      "Bash(php artisan test --compact)"
+    ]
+  }
+}

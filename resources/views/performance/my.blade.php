@@ -7,6 +7,17 @@
     </div>
 </div>
 
+<div class="section-card" style="margin-bottom:14px">
+    <div style="padding:12px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+        <span class="fb-label">Rating Guide</span>
+        <div class="fb-sep"></div>
+        <span class="sp sp-ok"><span class="d"></span>Outstanding (9.0–10)</span>
+        <span class="sp sp-rev"><span class="d"></span>Satisfactory (7.0–8.9)</span>
+        <span class="sp sp-late"><span class="d"></span>Needs Improvement (5.0–6.9)</span>
+        <span class="sp sp-no"><span class="d"></span>Poor (&lt;5.0)</span>
+    </div>
+</div>
+
 <div class="section-card">
     <div class="table-wrap">
         <table>
@@ -26,7 +37,7 @@
                     <td class="td-bold">{{ $r->period }}</td>
                     <td>
                         <div style="display:flex;align-items:center;gap:7px">
-                            <div class="p-bar"><div class="p-fill" style="width:{{ $r->score_pct }}%"></div></div>
+                            <div class="p-bar"><div class="p-fill" style="width:{{ $r->score_pct ?? 0 }}%"></div></div>
                             <span class="td-bold">{{ $r->score }}</span>
                         </div>
                     </td>

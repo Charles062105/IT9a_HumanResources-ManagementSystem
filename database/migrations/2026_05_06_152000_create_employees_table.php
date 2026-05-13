@@ -21,12 +21,13 @@ return new class extends Migration
             $table->string('department');
             $table->string('position');
             $table->date('date_hired');
-            $table->enum('status', ['active', 'probationary', 'contractual', 'inactive'])->default('active');
+            $table->enum('status', ['active', 'probationary', 'contractual'])->default('active');
             $table->date('contract_expiry')->nullable();
             $table->string('sss_number')->nullable();
             $table->string('pagibig_number')->nullable();
             $table->string('philhealth_number')->nullable();
             $table->boolean('profile_completed')->default(false);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

@@ -6,8 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>HRMS Pro – {{ $title ?? 'Dashboard' }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Syne:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/hrms.css') }}">
+    @vite(['resources/js/app.js'])
     @stack('styles')
 </head>
 <body>
@@ -36,7 +37,7 @@
             <a href="{{ route('employees.index') }}" class="nl {{ request()->routeIs('employees.*') ? 'active' : '' }}">
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Employees
-                <span class="nb b">{{ \App\Models\Employee::where('status','active')->count() }}</span>
+                <span class="nb b">{{ $sidebarCounts['employeeCount'] }}</span>
             </a>
             @endif
             <a href="{{ route('attendance.index') }}" class="nl {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
@@ -52,14 +53,12 @@
             <a href="{{ route('leaves.index') }}" class="nl {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 Leaves
-                @php $pendingLeaves = \App\Models\Leave::where('status','pending')->count(); @endphp
-                @if($pendingLeaves) <span class="nb">{{ $pendingLeaves }}</span> @endif
+                @if($sidebarCounts['pendingLeaves']) <span class="nb">{{ $sidebarCounts['pendingLeaves'] }}</span> @endif
             </a>
             <a href="{{ route('violations.index') }}" class="nl {{ request()->routeIs('violations.*') ? 'active' : '' }}">
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 Violations
-                @php $openViolations = \App\Models\Violation::where('status','open')->count(); @endphp
-                @if($openViolations) <span class="nb">{{ $openViolations }}</span> @endif
+                @if($sidebarCounts['openViolations']) <span class="nb">{{ $sidebarCounts['openViolations'] }}</span> @endif
             </a>
             <a href="{{ route('performance.index') }}" class="nl {{ request()->routeIs('performance.*') ? 'active' : '' }}">
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -71,14 +70,12 @@
             <a href="{{ route('notifications.index') }}" class="nl {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 Notifications
-                @php $unread = \App\Models\HrmsNotification::where('is_read',false)->count(); @endphp
-                @if($unread) <span class="nb">{{ $unread }}</span> @endif
+                @if($sidebarCounts['unreadNotifications']) <span class="nb">{{ $sidebarCounts['unreadNotifications'] }}</span> @endif
             </a>
             <a href="{{ route('requests.index') }}" class="nl {{ request()->routeIs('requests.*') ? 'active' : '' }}">
                 <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
                 Requests
-                @php $pendingReqs = \App\Models\UserRequest::where('status','pending')->count(); @endphp
-                @if($pendingReqs) <span class="nb">{{ $pendingReqs }}</span> @endif
+                @if($sidebarCounts['pendingRequests']) <span class="nb">{{ $sidebarCounts['pendingRequests'] }}</span> @endif
             </a>
             @endif
         </div>
@@ -90,7 +87,7 @@
                     <div class="u-name">{{ auth()->user()->name }}</div>
                     <div class="u-role">{{ ucfirst(auth()->user()->role) }}</div>
                 </div>
-                <form method="POST" action="{{ route('logout') }}" style="margin-left:auto">
+                <form method="POST" action="{{ route('logout') }}" style="margin-left:auto" data-logout-form>
                     @csrf
                     <button type="submit" class="logout-btn" title="Logout">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -110,15 +107,10 @@
                 <div class="pg-crumb">{{ $crumb ?? 'Home · Overview' }}</div>
             </div>
             <div class="tb-right">
-                <div class="srch-wrap">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    <input type="text" placeholder="Search employees..." class="srch-input" id="globalSearch">
-                    <span class="kbd">⌘K</span>
-                </div>
                 <div class="time-chip" id="livetime">—</div>
-                <a href="{{ route('notifications.index') }}" class="tib" style="position:relative;text-decoration:none">
+<a href="{{ route('notifications.index') }}" class="tib notif-bell" style="position:relative;text-decoration:none">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="color:#475569"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    @if($unread ?? 0) <span class="pip"></span> @endif
+                    @if($sidebarCounts['unreadNotifications']) <span class="notif-count">{{ $sidebarCounts['unreadNotifications'] > 99 ? '99+' : $sidebarCounts['unreadNotifications'] }}</span> @endif
                 </a>
                 <a href="{{ route('profile.edit') }}" class="u-av tib-av" title="Profile">{{ strtoupper(substr(auth()->user()->name,0,2)) }}</a>
             </div>
@@ -144,6 +136,22 @@
             {{ $slot }}
         </div>
 
+    </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div id="logoutModalOverlay" class="logout-modal-overlay"></div>
+<div id="logoutConfirmationModal" class="logout-confirmation-modal">
+    <div class="lc-content">
+        <div class="lc-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <h3>Confirm Logout</h3>
+        </div>
+        <p class="lc-message">Are you sure you want to log out? You will need to log in again to access the system.</p>
+        <div class="lc-actions">
+            <button type="button" id="logoutCancelBtn" class="lc-btn lc-btn-cancel">Cancel</button>
+            <button type="button" id="logoutConfirmBtn" class="lc-btn lc-btn-confirm">Log Out</button>
+        </div>
     </div>
 </div>
 

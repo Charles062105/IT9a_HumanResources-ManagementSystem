@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\HrmsNotification;
 use App\Models\Leave;
@@ -12,7 +13,7 @@ class LeaveController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Leave::with('employee')->latest();
+        $query = Leave::with('employee.user')->latest();
 
         // Employees only see their own leaves
         if (auth()->check() && auth()->user()->isEmployee()) {
@@ -41,7 +42,22 @@ class LeaveController extends Controller
 
         $leaves = $query->paginate(20)->appends($request->all());
 
-        return view('leaves.index', compact('leaves'));
+        // KPI summary for admins — counts based on current filter scope
+        $kpis = [];
+        if (auth()->user()->isAdmin()) {
+            $pendingCount = Leave::where('status', 'pending')->count();
+            $approvedCount = Leave::where('status', 'approved')->count();
+            $deniedCount = Leave::where('status', 'denied')->count();
+            $totalCount = Leave::count();
+            $kpis = [
+                'pending' => $pendingCount,
+                'approved' => $approvedCount,
+                'denied' => $deniedCount,
+                'total' => $totalCount,
+            ];
+        }
+
+        return view('leaves.index', compact('leaves', 'kpis'));
     }
 
     public function create()
@@ -67,9 +83,8 @@ class LeaveController extends Controller
         }
 
         $data = $request->validate([
-            // Some forms might use different fields; keep broad validation.
             'employee_id' => 'nullable|exists:employees,id',
-            'type' => 'required|string',
+            'type' => 'required|in:vacation,sick,emergency,maternity,paternity,solo_parent',
             'reason' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -90,12 +105,11 @@ class LeaveController extends Controller
         }
 
         $data['status'] = 'pending';
-        $data['requested_by'] = auth()->id();
 
         // Calculate number of days (inclusive of both start and end dates)
         $startDate = Carbon::parse($data['start_date']);
         $endDate = Carbon::parse($data['end_date']);
-        $data['days'] = $endDate->diffInDays($startDate) + 1;
+        $data['days'] = (int) $startDate->diffInDays($endDate) + 1;
 
         Leave::create($data);
 
@@ -114,6 +128,39 @@ class LeaveController extends Controller
         return view('leaves.show', compact('leave'));
     }
 
+    public function edit(Leave $leave)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins can edit leave requests.');
+        }
+
+        $employees = Employee::where('status', 'active')->orderBy('first_name')->get();
+
+        return view('leaves.edit', compact('leave', 'employees'));
+    }
+
+    public function update(Request $request, Leave $leave)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403, 'Only admins can update leave requests.');
+        }
+
+        $data = $request->validate([
+            'type' => 'required|in:vacation,sick,emergency,maternity,paternity,solo_parent',
+            'reason' => 'nullable|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = Carbon::parse($data['start_date']);
+        $endDate = Carbon::parse($data['end_date']);
+        $data['days'] = (int) $startDate->diffInDays($endDate) + 1;
+
+        $leave->update($data);
+
+        return redirect()->route('leaves.index')->with('success', 'Leave request updated.');
+    }
+
     // Admin-only
     public function approve(Leave $leave)
     {
@@ -126,6 +173,24 @@ class LeaveController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        // Auto-create ON_LEAVE attendance records for each day of leave
+        $currentDate = Carbon::parse($leave->start_date);
+        $endDate = Carbon::parse($leave->end_date);
+
+        while ($currentDate <= $endDate) {
+            Attendance::updateOrCreate(
+                [
+                    'employee_id' => $leave->employee_id,
+                    'date' => $currentDate->toDateString(),
+                ],
+                [
+                    'status' => 'on_leave',
+                    'notes' => "On {$leave->type} leave (approved {$leave->approved_at->format('M j, Y')})",
+                ]
+            );
+            $currentDate->addDay();
+        }
 
         HrmsNotification::create([
             'title' => 'Leave Approved',
@@ -148,6 +213,13 @@ class LeaveController extends Controller
             'status' => 'denied',
             'approved_by' => auth()->id(),
             'approved_at' => now(),
+        ]);
+
+        HrmsNotification::create([
+            'title' => 'Leave Request Denied',
+            'message' => "Your {$leave->type} leave request ({$leave->start_date->format('M j')} – {$leave->end_date->format('M j')}) has been denied.",
+            'type' => 'danger',
+            'user_id' => optional($leave->employee)->user_id,
         ]);
 
         return back()->with('success', 'Leave denied.');

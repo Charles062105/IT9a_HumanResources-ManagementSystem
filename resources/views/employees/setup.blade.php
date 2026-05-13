@@ -64,7 +64,7 @@
             </div>
             <div class="form-group">
                 <label>Phone number</label>
-                <input type="text" name="phone" value="{{ old('phone') }}" placeholder="+63 9XX XXX XXXX">
+                <input type="tel" name="phone" value="{{ old('phone') }}" placeholder="+63 9XX XXX XXXX">
             </div>
         </div>
         <div class="form-row">
@@ -97,13 +97,13 @@
         <div class="form-row">
             <div class="form-group">
                 <label>Date hired *</label>
-                <input type="date" name="date_hired" value="{{ old('date_hired', now()->format('Y-m-d')) }}" required>
+                <input type="date" name="date_hired" value="{{ old('date_hired', now()->format('Y-m-d')) }}" required class="{{ $errors->has('date_hired') ? 'input-error' : '' }}">
                 @error('date_hired')<div class="error-msg">{{ $message }}</div>@enderror
             </div>
             <div class="form-group">
                 <label>Employment status *</label>
                 <select name="status" required id="empStatus" onchange="toggleContractExpiry(this.value)">
-                    @foreach(['active' => 'Active (Regular)', 'probationary' => 'Probationary', 'contractual' => 'Contractual'] as $val => $label)
+                    @foreach(['active' => 'Active (Regular)', 'probationary' => 'Probationary', 'contractual' => 'Contractual', 'inactive' => 'Inactive'] as $val => $label)
                         <option value="{{ $val }}" {{ old('status') == $val ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -111,9 +111,10 @@
         </div>
         <div class="form-row" id="contractExpiryRow" style="{{ old('status') === 'contractual' ? '' : 'display:none' }}">
             <div class="form-group">
-                <label>Contract expiry date</label>
-                <input type="date" name="contract_expiry" value="{{ old('contract_expiry') }}">
+                <label id="contractExpiryLabel">Contract expiry date</label>
+                <input type="date" name="contract_expiry" value="{{ old('contract_expiry') }}" id="contractExpiryInput" class="{{ $errors->has('contract_expiry') ? 'input-error' : '' }}">
                 <div style="font-size:10px;color:var(--text3);margin-top:3px">Required for contractual employees — alerts will trigger 30 days before.</div>
+                @error('contract_expiry')<div class="error-msg">{{ $message }}</div>@enderror
             </div>
         </div>
 
@@ -127,27 +128,28 @@
         <div class="form-row">
             <div class="form-group">
                 <label>SSS number</label>
-                <input type="text" name="sss_number" value="{{ old('sss_number') }}" placeholder="00-0000000-0">
+                <input type="text" name="sss_number" value="{{ old('sss_number') }}" placeholder="00-0000000-0" title="Format: 00-0000000-0">
             </div>
             <div class="form-group">
                 <label>Pag-IBIG (HDMF) number</label>
-                <input type="text" name="pagibig_number" value="{{ old('pagibig_number') }}" placeholder="0000-0000-0000">
+                <input type="text" name="pagibig_number" value="{{ old('pagibig_number') }}" placeholder="0000-0000-0000" title="Format: 0000-0000-0000">
             </div>
         </div>
         <div class="form-row">
             <div class="form-group">
                 <label>PhilHealth number</label>
-                <input type="text" name="philhealth_number" value="{{ old('philhealth_number') }}" placeholder="00-000000000-0" style="max-width:260px">
+                <input type="text" name="philhealth_number" value="{{ old('philhealth_number') }}" placeholder="00-000000000-0" title="Format: 00-000000000-0">
             </div>
         </div>
 
         <div class="divider"></div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary" style="padding:10px 24px">
-                Save employee profile
+            <button type="submit" class="btn-primary" style="padding:10px 24px" id="submitBtn" onclick="setLoading(event)">
+                <span id="submitText">Save employee profile</span>
+                <span id="submitLoader" style="display:none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
             </button>
-            <a href="{{ route('requests.index') }}" class="btn-secondary">Skip for now</a>
+            <a href="{{ route('dashboard') }}" class="btn-secondary">Skip for now</a>
             <span style="font-size:11px;color:var(--text3);margin-left:auto">
                 Fields marked * are required. Government IDs can be added later.
             </span>
@@ -168,11 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
     container: document.getElementById('progress-container'),
     onStepChange: (step) => {
       const sections = document.querySelectorAll('.form-title');
-      sections.forEach((s, i) => s.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      if (sections[step]) {
+        sections[step].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   });
 
-  // Track progress as user fills form
   const form = document.getElementById('employee-setup-form');
   if (form) {
     const personalSection = form.querySelector('input[name="first_name"]');
@@ -180,19 +183,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const idsSection = form.querySelector('input[name="sss_number"]');
 
     const checkSectionCompletion = () => {
-      // Check personal section (at least first_name, last_name, email filled)
-      if (personalSection?.value && form.querySelector('input[name="last_name"]')?.value && 
+      if (personalSection?.value && form.querySelector('input[name="last_name"]')?.value &&
           form.querySelector('input[name="email"]')?.value) {
         progressTracker.steps[0].completed = true;
       }
-      
-      // Check employment section
+
       if (employmentSection?.value && form.querySelector('input[name="position"]')?.value &&
           form.querySelector('input[name="date_hired"]')?.value) {
         progressTracker.steps[1].completed = true;
       }
 
-      // Check IDs section (optional but show as completed if any filled)
       if (idsSection?.value) {
         progressTracker.steps[2].completed = true;
       }
@@ -202,21 +202,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     form.addEventListener('input', checkSectionCompletion);
     form.addEventListener('change', checkSectionCompletion);
-    
-    // Initial check
     checkSectionCompletion();
 
-    // Add submit feedback
+    let formDirty = false;
+
+    form.addEventListener('input', function() {
+        formDirty = true;
+    });
+
+    form.addEventListener('change', function() {
+        formDirty = true;
+    });
+
     form.addEventListener('submit', (e) => {
+      formDirty = false;
       LoadingOverlay.show('Saving employee profile...');
-      // Natural form submission will happen
+    });
+
+    window.addEventListener('beforeunload', function(e) {
+        if (formDirty) {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        }
     });
   }
 });
 
 function toggleContractExpiry(val) {
     const row = document.getElementById('contractExpiryRow');
-    row.style.display = val === 'contractual' ? '' : 'none';
+    const input = document.getElementById('contractExpiryInput');
+    const label = document.getElementById('contractExpiryLabel');
+
+    if (val === 'contractual') {
+        row.style.display = '';
+        input.required = true;
+        label.innerHTML = 'Contract expiry date *';
+    } else {
+        row.style.display = 'none';
+        input.required = false;
+        input.value = '';
+        label.innerHTML = 'Contract expiry date';
+    }
+}
+
+function setLoading(event) {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    document.getElementById('submitText').style.display = 'none';
+    document.getElementById('submitLoader').style.display = 'inline-block';
 }
 </script>
 @endpush

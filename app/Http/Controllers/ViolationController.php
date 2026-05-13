@@ -15,8 +15,8 @@ class ViolationController extends Controller
         $query = Violation::with('employee')->latest();
 
         // Employees can only see their own violations
-        if (auth()->user()->isEmployee()) {
-            $employee = auth()->user()->employee;
+        if (Auth::user()->isEmployee()) {
+            $employee = Auth::user()->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);
             } else {
@@ -45,7 +45,7 @@ class ViolationController extends Controller
 
     public function my()
     {
-        $employee = auth()->user()->employee;
+        $employee = Auth::user()->employee;
         $violations = $employee
             ? Violation::where('employee_id', $employee->id)->latest()->paginate(15)
             : collect();
@@ -56,8 +56,8 @@ class ViolationController extends Controller
     public function create()
     {
         // Employees should only be able to log violations for themselves.
-        if (auth()->user()->isEmployee()) {
-            $employee = auth()->user()->employee;
+        if (Auth::user()->isEmployee()) {
+            $employee = Auth::user()->employee;
             if (! $employee) {
                 abort(403);
             }
@@ -73,8 +73,8 @@ class ViolationController extends Controller
     public function store(Request $request)
     {
         // If the user is an employee, force employee_id to their own record.
-        if (auth()->user()->isEmployee()) {
-            $employee = auth()->user()->employee;
+        if (Auth::user()->isEmployee()) {
+            $employee = Auth::user()->employee;
             if (! $employee) {
                 abort(403);
             }
@@ -98,7 +98,7 @@ class ViolationController extends Controller
         }
 
         $data['status'] = 'open';
-        $data['issued_by'] = auth()->id();
+        $data['issued_by'] = Auth::id();
 
         DB::transaction(function () use ($data) {
             // Lock existing rows for this employee to serialize concurrent inserts.
@@ -115,19 +115,31 @@ class ViolationController extends Controller
 
     public function show(Violation $violation)
     {
+        $user = Auth::user();
+        if ($user->isEmployee() && $user->employee?->id !== $violation->employee_id) {
+            abort(403, 'Unauthorized.');
+        }
+
         return view('violations.show', compact('violation'));
     }
 
     public function resolve(Violation $violation)
     {
+        if (! Auth::user()->isAdmin()) {
+            abort(403, 'Only admins can resolve violations.');
+        }
+
         $violation->update(['status' => 'resolved']);
 
         return back()->with('success', 'Violation marked as resolved.');
     }
 
-    public function destroy($id)
+    public function destroy(Violation $violation)
     {
-        $violation = Violation::findOrFail($id);
+        if (! Auth::user()->isAdmin()) {
+            abort(403, 'Only admins can delete violations.');
+        }
+
         $violation->delete();
 
         return back()->with('success', 'Violation deleted.');

@@ -3,6 +3,7 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 import { FormValidator, Validators, PasswordStrength } from './validations';
 import { ProgressTracker, Toast, ConfirmDialog, LoadingOverlay } from './components';
+import { initAttendanceChart, initLiveClock } from './chart-init';
 import './form-handlers';
 
 window.Alpine = Alpine;
@@ -13,6 +14,8 @@ window.ProgressTracker = ProgressTracker;
 window.Toast = Toast;
 window.ConfirmDialog = ConfirmDialog;
 window.LoadingOverlay = LoadingOverlay;
+window.initAttendanceChart = initAttendanceChart;
+window.initLiveClock = initLiveClock;
 
 Alpine.start();
 

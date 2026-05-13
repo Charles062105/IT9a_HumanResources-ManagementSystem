@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssignedTimesheetController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
@@ -40,8 +41,8 @@ Route::middleware('auth')->group(function () {
     Route::get('timesheets/my', [TimesheetController::class, 'my'])->name('timesheets.my');
     Route::resource('violations', ViolationController::class);
     Route::patch('violations/{violation}/resolve', [ViolationController::class, 'resolve'])->name('violations.resolve');
-    Route::resource('performance', PerformanceController::class);
     Route::get('performance/my', [PerformanceController::class, 'my'])->name('performance.my');
+    Route::resource('performance', PerformanceController::class);
     Route::resource('notifications', NotificationController::class);
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -53,15 +54,29 @@ Route::middleware('auth')->group(function () {
         Route::patch('employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate');
         Route::patch('employees/{employee}/activate', [EmployeeController::class, 'activate'])->name('employees.activate');
 
+        // Batch employee operations
+        Route::post('employees/batch/deactivate', [EmployeeController::class, 'batchDeactivate'])->name('employees.batch-deactivate');
+        Route::post('employees/batch/export', [EmployeeController::class, 'batchExport'])->name('employees.batch-export');
+
         Route::patch('leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve');
         Route::patch('leaves/{leave}/deny', [LeaveController::class, 'deny'])->name('leaves.deny');
         Route::patch('timesheets/{timesheet}/approve', [TimesheetController::class, 'approve'])->name('timesheets.approve');
         Route::patch('timesheets/{timesheet}/reject', [TimesheetController::class, 'reject'])->name('timesheets.reject');
 
-        // Admin-specific routes
-        Route::resource('requests', UserRequestController::class);
+        Route::resource('assigned-timesheets', AssignedTimesheetController::class);
+
+        // Admin-specific routes (both super_admin and sub_admin)
+        // Explicit routes MUST come before the resource to avoid {request} capturing "X/approve"
         Route::patch('requests/{request_model}/approve', [UserRequestController::class, 'approve'])->name('requests.approve');
         Route::patch('requests/{request_model}/reject', [UserRequestController::class, 'reject'])->name('requests.reject');
+        Route::resource('requests', UserRequestController::class);
+
+        // Super Admin only - User role management
+        Route::middleware('super_admin')->group(function () {
+            Route::get('users/{user}/make-admin', [UserRequestController::class, 'makeAdmin'])->name('users.make-admin');
+            Route::patch('users/{user}/assign-admin-role', [UserRequestController::class, 'assignAdminRole'])->name('users.assign-admin-role');
+            Route::patch('users/{user}/revoke-admin', [UserRequestController::class, 'revokeAdmin'])->name('users.revoke-admin');
+        });
     });
 });
 

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('message');
-            $table->enum('type', ['success', 'warning', 'danger', 'info'])->default('info');
+            $table->enum('type', ['success', 'warning', 'error', 'info'])->default('info');
             $table->boolean('is_read')->default(false);
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
             $table->timestamps();

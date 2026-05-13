@@ -6,8 +6,9 @@
         <div class="page-header-sub">Progressive discipline records — 5 levels: Verbal → Written → Final → Suspension → Termination</div>
     </div>
     @if(auth()->user()->isAdmin())
-    <a href="{{ route('violations.create') }}" class="btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:12px">
-        + Log Violation
+    <a href="{{ route('violations.create') }}" class="btn-primary" style="text-decoration:none">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Log Violation
     </a>
     @endif
 </div>
@@ -35,7 +36,9 @@
             <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
         </select>
         <button type="submit" class="fbtn">Apply</button>
-        <a href="{{ route('violations.index') }}" class="fbtn ghost">Reset</a>
+        @if(request()->anyFilled(['search','level','department','status']))
+            <a href="{{ route('violations.index') }}" class="fbtn ghost">Reset</a>
+        @endif
         <span class="f-results">{{ $violations->total() }} records</span>
     </form>
 
@@ -47,24 +50,29 @@
                     <th>Department</th>
                     <th>Level</th>
                     <th>Offense</th>
-                    <th>#</th>
+                    <th style="text-align:center">#</th>
                     <th>Status</th>
                     <th>Date</th>
+                    @if(auth()->user()->isAdmin())
                     <th>Actions</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
                 @forelse($violations as $v)
                 @php $badge = $v->level_badge_color; @endphp
                 <tr>
-                    <td class="td-bold">{{ $v->employee?->full_name }}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="av av-sm" style="background:#FEE2E2;color:#991B1B;font-size:9px">{{ $v->employee?->initials }}</div>
+                            <span class="td-bold">{{ $v->employee?->full_name }}</span>
+                        </div>
+                    </td>
                     <td class="td-muted">{{ $v->employee?->department }}</td>
                     <td>
-                        <span class="sp" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }};border-radius:5px">
-                            {{ $v->level }}
-                        </span>
+                        <span class="sp" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }};border-radius:5px">{{ $v->level }}</span>
                     </td>
-                    <td class="td-muted">{{ $v->offense }}</td>
+                    <td class="td-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ $v->offense }}">{{ $v->offense }}</td>
                     <td style="text-align:center">
                         <span class="vb" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }}">{{ $v->offense_count }}</span>
                     </td>
@@ -73,23 +81,20 @@
                         <span class="sp {{ $sc }}"><span class="d"></span>{{ ucfirst($v->status) }}</span>
                     </td>
                     <td class="td-muted">{{ $v->date?->format('M j, Y') }}</td>
+                    @if(auth()->user()->isAdmin())
                     <td>
-                        @if(auth()->user()->isAdmin())
                         <div style="display:flex;gap:6px;align-items:center">
-                            <a href="{{ route('violations.show', $v) }}" class="page-link-text">View</a>
+                            <a href="{{ route('violations.show', $v) }}" class="notif-action-btn notif-action-btn-read" style="padding:3px 9px;font-size:10px;border-radius:5px;text-decoration:none">View</a>
                             @if($v->status === 'open')
-                            <form method="POST" action="{{ route('violations.resolve', $v) }}">@csrf @method('PATCH')
-                                <button type="submit" style="background:none;border:none;font-size:11px;font-weight:500;color:var(--success);cursor:pointer;font-family:inherit;padding:0">Resolve</button>
-                            </form>
+                                <button type="button" class="notif-action-btn notif-action-btn-read" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="openResolveModal({{ $v->id }}, '{{ addslashes($v->employee?->full_name) }}', '{{ addslashes($v->offense) }}')">Resolve</button>
                             @endif
+                            <button type="button" class="notif-action-btn notif-action-btn-delete" style="padding:3px 9px;font-size:10px;border-radius:5px" onclick="confirmDelete({{ $v->id }}, '{{ addslashes($v->employee?->full_name) }}', '{{ addslashes($v->offense) }}')">Delete</button>
                         </div>
-                        @else
-                            <span class="td-muted">—</span>
-                        @endif
                     </td>
+                    @endif
                 </tr>
                 @empty
-                <tr><td colspan="8"><div class="empty-state">
+                <tr><td colspan="{{ auth()->user()->isAdmin() ? '9' : '8' }}"><div class="empty-state">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     No violations found
                 </div></td></tr>
@@ -101,5 +106,83 @@
         <div class="pagination-wrap">{{ $violations->links() }}</div>
     @endif
 </div>
+
+{{-- Resolve Modal --}}
+<div id="resolveModal" class="modal-overlay">
+    <div class="modal-dialog" style="max-width:400px">
+        <div class="modal-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Mark as Resolved
+        </div>
+        <div class="modal-body">
+            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
+                Mark <strong id="resName" style="color:var(--text)"></strong>'s violation<br>
+                "<em id="resOffense" style="color:var(--text)"></em>" as resolved?
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-deny" onclick="closeResolveModal()">Cancel</button>
+            <form id="resolveForm" method="POST" style="display:inline">
+                @csrf @method('PATCH')
+                <button type="submit" class="btn-success" style="padding:8px 16px">Resolve</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Delete Modal --}}
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-dialog" style="max-width:400px">
+        <div class="modal-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Delete Violation
+        </div>
+        <div class="modal-body">
+            <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
+                Delete <strong id="delName" style="color:var(--text)"></strong>'s violation<br>
+                "<em id="delOffense" style="color:var(--text)"></em>"?<br><br>This action cannot be undone.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-deny" onclick="closeDeleteModal()">Cancel</button>
+            <form id="deleteForm" method="POST" style="display:inline">
+                @csrf @method('DELETE')
+                <button type="submit" class="btn-danger" style="padding:8px 16px">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function openResolveModal(id, name, offense) {
+    document.getElementById('resName').textContent = name;
+    document.getElementById('resOffense').textContent = offense;
+    var m = document.getElementById('resolveModal');
+    m.style.display = 'flex'; m.classList.add('show');
+    document.getElementById('resolveForm').action = '{{ route('violations.resolve', '__ID__') }}'.replace('__ID__', id);
+}
+function closeResolveModal() {
+    var m = document.getElementById('resolveModal');
+    m.style.display = 'none'; m.classList.remove('show');
+}
+
+function confirmDelete(id, name, offense) {
+    document.getElementById('delName').textContent = name;
+    document.getElementById('delOffense').textContent = offense;
+    var m = document.getElementById('deleteModal');
+    m.style.display = 'flex'; m.classList.add('show');
+    document.getElementById('deleteForm').action = '{{ route('violations.destroy', '__ID__') }}'.replace('__ID__', id);
+}
+function closeDeleteModal() {
+    var m = document.getElementById('deleteModal');
+    m.style.display = 'none'; m.classList.remove('show');
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeResolveModal(); closeDeleteModal(); }
+});
+</script>
+@endpush
 
 </x-app-layout>

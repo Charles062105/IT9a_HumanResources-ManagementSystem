@@ -9,6 +9,7 @@
 </div>
 
 <div class="form-card">
+    <div class="form-title">Send Notification</div>
     <form method="POST" action="{{ route('notifications.store') }}">
         @csrf
 
