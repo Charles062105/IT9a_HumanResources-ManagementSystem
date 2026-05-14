@@ -233,17 +233,12 @@
 
 @push('scripts')
 <script>
-// Set chart data for auto-init
+// Set chart data for auto-init via app.js / chart-init.js
 window.__chartData = {
     labels: {!! json_encode($chartDays) !!},
     present: {!! json_encode($chartPresent) !!},
     absent: {!! json_encode($chartAbsent) !!}
 };
-
-initLiveClock('live-clock');
-if (window.__chartData) {
-    initAttendanceChart('attendChart', window.__chartData.labels, window.__chartData.present, window.__chartData.absent);
-}
 </script>
 @endpush
 

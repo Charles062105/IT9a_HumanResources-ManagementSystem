@@ -8,7 +8,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Syne:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/hrms.css') }}">
-    @vite(['resources/js/app.js'])
+    @php
+        $manifestPath = public_path('build/manifest.json');
+        $manifest = file_exists($manifestPath) ? json_decode(file_get_contents($manifestPath), true) : null;
+        $appScript = $manifest['resources/js/app.js']['file'] ?? null;
+    @endphp
+    @if($appScript)
+        <script type="module" src="{{ asset('build/' . $appScript) }}"></script>
+    @else
+        @vite(['resources/js/app.js'])
+    @endif
     @stack('styles')
 </head>
 <body>
