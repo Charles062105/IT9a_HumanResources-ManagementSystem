@@ -6,6 +6,7 @@ use App\Models\HrmsNotification;
 use App\Models\User;
 use App\Models\UserRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class UserRequestController extends Controller
 {
@@ -89,6 +90,11 @@ class UserRequestController extends Controller
             abort(403, 'Cannot change your own role.');
         }
 
+        // Prevent attempting to make someone admin if they already are
+        if ($user->isAdmin()) {
+            abort(403, 'User is already an admin.');
+        }
+
         // Offer choice between super_admin or sub_admin
         return view('requests.make-admin', compact('user'));
     }
@@ -109,9 +115,10 @@ class UserRequestController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        // If user already has the same admin role, block redundant update.
+        // If user already has the same role, block redundant update
         if ($user->role === $validated['role']) {
-            abort(403, 'User already has this admin role.');
+            $currentRole = ucfirst(str_replace('_', ' ', $user->role));
+            abort(403, "User is already a {$currentRole}.");
         }
 
         $user->update(['role' => $validated['role']]);
@@ -142,9 +149,16 @@ class UserRequestController extends Controller
             abort(403, 'Cannot revoke your own admin role.');
         }
 
-        // Prevent revoking if it's the last super admin
+        // Prevent attempting to revoke admin role from non-admin user
+        if (! $user->isAdmin()) {
+            abort(403, 'User is not an admin.');
+        }
+
+        // Prevent revoking if it's the last super admin (with 5-minute cache)
         if ($user->isSuperAdmin()) {
-            $superAdminCount = User::where('role', User::ROLE_SUPER_ADMIN)->count();
+            $superAdminCount = Cache::remember('super_admin_count', 300, function () {
+                return User::where('role', User::ROLE_SUPER_ADMIN)->count();
+            });
             if ($superAdminCount <= 1) {
                 abort(403, 'Cannot revoke the last Super Admin in the system.');
             }
@@ -164,16 +178,21 @@ class UserRequestController extends Controller
             abort(403, 'Cannot change your own role.');
         }
 
-        \DB::transaction(function () use ($user) {
-            // Lock the super_admin rows to prevent concurrent revocations
-            $superAdminCount = User::where('role', User::ROLE_SUPER_ADMIN)->lockForUpdate()->count();
-            if ($superAdminCount <= 1 && $user->isSuperAdmin()) {
+        // Prevent downgrading the last super admin - check BEFORE update with cached count
+        if ($user->isSuperAdmin()) {
+            $superAdminCount = Cache::remember('super_admin_count', 300, function () {
+                return User::where('role', User::ROLE_SUPER_ADMIN)->count();
+            });
+            if ($superAdminCount <= 1) {
                 abort(403, 'At least one Super Admin must exist in the system.');
             }
+        }
 
-            // User can be downgraded to employee
-            $user->update(['role' => User::ROLE_EMPLOYEE]);
-        });
+        // Update role - no locking needed since we validated above
+        $user->update(['role' => User::ROLE_EMPLOYEE]);
+
+        // Invalidate cache since admin count changed
+        Cache::forget('super_admin_count');
 
         HrmsNotification::create([
             'title' => 'Admin Role Revoked',

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Helpers\DateHelper;
 use App\Models\Employee;
 use App\Models\HrmsNotification;
 use App\Models\Leave;
@@ -56,5 +57,8 @@ class AppServiceProvider extends ServiceProvider
                 'pendingRequests' => $pendingRequests,
             ]);
         });
+
+        // Share DateHelper with all views
+        View::share('DateHelper', DateHelper::class);
     }
 }

@@ -81,13 +81,25 @@ class AttendanceController extends Controller
         $this->authorize('create', Attendance::class);
 
         try {
-            $manualTime = $request->filled('time')
-                ? Carbon::parse($request->time)
-                : null;
+            $manualTime = null;
+            if ($request->filled('time')) {
+                $manualTime = Carbon::parse($request->time);
+
+                // Validate: cannot be future time
+                if ($manualTime->isFuture()) {
+                    return back()->with('error', 'Cannot clock in with a future time. Please use current time.');
+                }
+
+                // Validate: not more than 24 hours in past
+                if ($manualTime->diffInHours(now(), absolute: true) > 24) {
+                    return back()->with('warning', 'Time is more than 24 hours old. Please verify.');
+                }
+            }
 
             $record = $this->attendanceService->recordTimeIn($employee, $manualTime);
 
-            return back()->with('success', 'Time in recorded: '.$record->time_in->format('h:i A'));
+            return back()->with('success', 'Time in recorded: '.$record->time_in->format('h:i A').
+                ($record->status === 'late' ? ' (Late)' : ''));
         } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -103,13 +115,24 @@ class AttendanceController extends Controller
         $this->authorize('create', Attendance::class);
 
         try {
-            $manualTime = $request->filled('time')
-                ? Carbon::parse($request->time)
-                : null;
+            $manualTime = null;
+            if ($request->filled('time')) {
+                $manualTime = Carbon::parse($request->time);
+
+                // Validate: cannot be future time
+                if ($manualTime->isFuture()) {
+                    return back()->with('error', 'Cannot clock out with a future time. Please use current time.');
+                }
+
+                // Validate: not more than 24 hours in past
+                if ($manualTime->diffInHours(now(), absolute: true) > 24) {
+                    return back()->with('warning', 'Time is more than 24 hours old. Please verify.');
+                }
+            }
 
             $record = $this->attendanceService->recordTimeOut($employee, $manualTime);
             $hoursWorked = $this->attendanceService->getHoursWorked($record);
-            $message = 'Time out recorded';
+            $message = 'Time out recorded: '.$record->time_out->format('h:i A');
             if ($hoursWorked) {
                 $whole = floor($hoursWorked);
                 $mins = round(($hoursWorked - $whole) * 60);
@@ -118,7 +141,9 @@ class AttendanceController extends Controller
 
             return back()->with('success', $message);
         } catch (ModelNotFoundException) {
-            return back()->with('error', 'No active time-in found.');
+            return back()->with('error', 'No active time-in found. Please clock in first.');
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
         }
     }
 

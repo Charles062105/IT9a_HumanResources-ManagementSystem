@@ -3,15 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\HrmsNotification;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $query = HrmsNotification::latest();
+        /** @var Builder $query */
+        $query = HrmsNotification::where(function ($q) {
+            // Show notifications for current user OR system-wide (null user_id)
+            $q->where('user_id', Auth::id())
+                ->orWhereNull('user_id');
+        })->latest('created_at');
 
-        if ($t = $request->type) {
+        if ($t = $request->input('type')) {
             if ($t === 'danger') {
                 $t = 'error';
             }
@@ -19,17 +26,21 @@ class NotificationController extends Controller
             $query->where('type', $t);
         }
 
-        if ($r = $request->read) {
+        if ($r = $request->input('read')) {
             if ($r === 'unread') {
-                $query->where('is_read', false);
-            }
-            if ($r === 'read') {
-                $query->where('is_read', true);
+                $query->where('is_read', '=', false);
+            } elseif ($r === 'read') {
+                $query->where('is_read', '=', true);
             }
         }
 
         $notifications = $query->paginate(25)->appends($request->all());
-        $hasUnread = HrmsNotification::where('is_read', false)->exists();
+        /** @var Builder $unreadQuery */
+        $unreadQuery = HrmsNotification::where(function ($q) {
+            $q->where('user_id', Auth::id())
+                ->orWhereNull('user_id');
+        });
+        $hasUnread = $unreadQuery->where('is_read', false)->exists();
 
         return view('notifications.index', compact('notifications', 'hasUnread'));
     }
@@ -73,6 +84,7 @@ class NotificationController extends Controller
 
     public function readAll()
     {
+        /** @noinspection PhpMethodParametersCountMismatchInspection */
         HrmsNotification::where('is_read', false)->update(['is_read' => true]);
 
         return back()->with('success', 'All notifications marked as read.');

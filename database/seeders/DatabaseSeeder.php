@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'super_admin',
                 'status' => 'active',
+                'email_verified_at' => now(),
             ]
         );
 
@@ -61,6 +62,7 @@ class DatabaseSeeder extends Seeder
                     'password' => Hash::make('password'),
                     'role' => 'employee',
                     'status' => 'active',
+                    'email_verified_at' => now(),
                 ]
             );
 
@@ -182,6 +184,7 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'role' => 'employee',
                 'status' => 'pending',
+                'email_verified_at' => now(),
             ]
         );
         UserRequest::create(['user_id' => $pendingUser->id, 'type' => 'Account Activation', 'details' => 'New employee registration', 'status' => 'pending']);

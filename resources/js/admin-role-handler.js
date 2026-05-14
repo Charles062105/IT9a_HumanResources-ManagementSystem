@@ -5,7 +5,7 @@ import { ConfirmDialog, LoadingOverlay } from './components';
  * Manages make-admin and revoke-admin operations
  */
 export class AdminRoleHandler {
-  /**
+  /** fu
    * Initialize Make Admin form
    */
   static initMakeAdmin() {
@@ -55,6 +55,12 @@ export class AdminRoleHandler {
    */
   static setupMakeAdminSubmit(form) {
     form.addEventListener('submit', async (e) => {
+      // Prevent repeated submits / double handlers causing long loading
+      if (form.dataset.submitting === '1') {
+        e.preventDefault();
+        return;
+      }
+
       e.preventDefault();
 
       const roleSelect = document.querySelector('input[name="role"]:checked');
@@ -69,6 +75,7 @@ export class AdminRoleHandler {
          <p>This action will grant admin privileges and send a notification to the user.</p>
          <p>Do you want to proceed?</p>`,
         () => {
+          form.dataset.submitting = '1';
           LoadingOverlay.show('Assigning role...');
           form.submit();
         }
@@ -79,6 +86,7 @@ export class AdminRoleHandler {
       }
     });
   }
+
 
   /**
    * Setup Revoke Admin form submission with custom modal

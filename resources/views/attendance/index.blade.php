@@ -15,21 +15,22 @@
         @endif
 
         @if(!$todayRecord)
-        <form method="POST" action="{{ route('attendance.time-in') }}" data-clock-form style="margin:0;display:flex;align-items:center;gap:8px">
+        <form method="POST" action="{{ route('attendance.time-in') }}" data-clock-form style="margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;display:none" id="clock-in-form">
             @csrf
-            <input type="time" name="time" class="local-time-input" style="time-input">
-            <button type="submit" class="btn-success" data-submit-btn>
-                <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Clock In
-            </button>
+            <input type="time" name="time" class="form-input form-input-time" placeholder="HH:MM" aria-label="Clock time input" required id="clock-in-time">
         </form>
+        <button type="button" class="btn-success confirm-clock-in" data-action="time-in" onclick="handleClockIn()">
+            <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Clock In
+        </button>
         @elseif($todayRecord->time_in && !$todayRecord->time_out)
-        <form method="POST" action="{{ route('attendance.time-out') }}" data-clock-form style="margin:0;display:flex;align-items:center;gap:8px">
+        <form method="POST" action="{{ route('attendance.time-out') }}" data-clock-form style="margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;display:none" id="clock-out-form">
             @csrf
-            <input type="time" name="time" class="local-time-input" style="time-input">
-            <button type="submit" class="btn-danger" data-submit-btn>
-                <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-                Clock Out
+            <input type="time" name="time" class="form-input form-input-time" placeholder="HH:MM" aria-label="Clock time input" required id="clock-out-time">
+        </form>
+        <button type="button" class="btn-danger confirm-clock-out" data-action="time-out" onclick="handleClockOut()">
+            <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+            Clock Out
             </button>
         </form>
         <div class="clocked-badge">
@@ -50,6 +51,97 @@
     </div>
     @endif
 </div>
+
+{{-- Live Clock Display for Employees --}}
+@if(auth()->user()->isEmployee())
+<div class="section-card" style="background:linear-gradient(135deg,#0f1e38 0%,#1a2744 100%);color:white;padding:32px;margin-bottom:24px">
+    <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+        <div style="flex:1;text-align:center;min-width:200px">
+            <div id="live-clock" style="font-family:'DM Mono',monospace;font-size:3.5rem;font-weight:700;color:white;line-height:1.1">--:--:--</div>
+            <div id="live-date" style="text-align:center;font-size:14px;color:rgba(255,255,255,0.6);margin-top:8px;font-weight:500">Today</div>
+        </div>
+        
+        @if($todayRecord)
+        <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;background:rgba(255,255,255,0.08);padding:16px;border-radius:8px">
+                <div style="flex:1">
+                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.5);margin-bottom:4px">Clocked In</div>
+                    <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:#4ade80">{{ $todayRecord->time_in?->format('h:i A') ?? '—' }}</div>
+                </div>
+                <div style="width:1px;height:40px;background:rgba(255,255,255,0.15)"></div>
+                <div style="flex:1">
+                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.5);margin-bottom:4px">Clocked Out</div>
+                    <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:#f87171">{{ $todayRecord->time_out?->format('h:i A') ?? '—' }}</div>
+                </div>
+            </div>
+            @php
+                $status = match(true) {
+                    $todayRecord->time_out => 'complete',
+                    $todayRecord->status === 'absent' => 'absent',
+                    $todayRecord->time_in => 'in-progress',
+                    default => 'pending'
+                };
+            @endphp
+            <div style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:6px;font-size:13px;font-weight:600;width:100%;justify-content:center;
+            @if($status === 'complete')
+                background:rgba(74,222,128,0.2);color:#4ade80;border:1px solid rgba(74,222,128,0.3)
+            @elseif($status === 'absent')
+                background:rgba(248,113,113,0.2);color:#f87171;border:1px solid rgba(248,113,113,0.3)
+            @elseif($status === 'in-progress')
+                background:rgba(59,130,246,0.2);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);animation:pulse 2s infinite
+            @else
+                background:rgba(107,114,128,0.2);color:rgba(255,255,255,0.6);border:1px solid rgba(107,114,128,0.3)
+            @endif
+            ">
+                @if($status === 'complete')
+                    ✓ Day Complete
+                @elseif($status === 'absent')
+                    Marked Absent
+                @elseif($status === 'in-progress')
+                    ◉ Clocked In
+                @else
+                    Not Yet Clocked In
+                @endif
+            </div>
+        </div>
+        @else
+        <div style="flex:1;text-align:center;padding:16px;color:rgba(255,255,255,0.6);font-size:14px">
+            Not yet clocked in
+        </div>
+        @endif
+    </div>
+    
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @media (max-width: 768px) {
+            [style*="display:flex;align-items:center;gap:32px"] {
+                flex-direction: column !important;
+                gap: 20px !important;
+            }
+            
+            #live-clock {
+                font-size: 2.5rem !important;
+            }
+        }
+    </style>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initLiveClock('live-clock');
+    const dateEl = document.getElementById('live-date');
+    if (dateEl) {
+        const options = { weekday: 'long', month: 'short', day: 'numeric' };
+        const today = new Date().toLocaleDateString('en-US', options);
+        dateEl.textContent = today;
+    }
+});
+</script>
+@endif
 
 {{-- KPI Summary Row (admin only) --}}
 @if(auth()->user()->isAdmin() && !empty($kpis))
@@ -267,6 +359,93 @@ document.querySelectorAll('[data-clock-form]').forEach(function(form) {
 }
 .complete-badge {
     display: flex; align-items: center; gap: 6px;
+    padding: 9px 14px;
+    background: #DCFCE7; color: #15803D;
+    border-radius: 6px; font-size: 12px; font-weight: 600;
+}
+.pulse-dot {
+    width: 8px; height: 8px;
+    background: #92400E;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+</style>
+
+@push('scripts')
+<script>
+let isSubmitting = false;
+
+function handleClockIn() {
+    const form = document.getElementById('clock-in-form');
+    const timeInput = document.getElementById('clock-in-time');
+    const time = timeInput.value || 'Current time';
+    
+    if (confirm(`You are about to clock in at ${time}. This will mark you as present. Continue?`)) {
+        isSubmitting = true;
+        const btn = event.target.closest('button');
+        btn.disabled = true;
+        btn.textContent = '⏳ Recording...';
+        
+        form.submit();
+    }
+}
+
+function handleClockOut() {
+    const form = document.getElementById('clock-out-form');
+    const timeInput = document.getElementById('clock-out-time');
+    const time = timeInput.value || 'Current time';
+    
+    if (confirm(`You are about to clock out at ${time}. After clocking out, you won't be able to modify your time for today. Continue?`)) {
+        isSubmitting = true;
+        const btn = event.target.closest('button');
+        btn.disabled = true;
+        btn.textContent = '⏳ Recording...';
+        
+        form.submit();
+    }
+}
+
+// Validate time inputs - prevent future times
+document.getElementById('clock-in-time')?.addEventListener('change', function() {
+    if (!this.value) return;
+    const [hours, minutes] = this.value.split(':').map(Number);
+    const inputTime = new Date();
+    inputTime.setHours(hours, minutes, 0);
+    
+    if (inputTime > new Date()) {
+        alert('Cannot use future time. Please select current or past time.');
+        this.value = '';
+    }
+});
+
+document.getElementById('clock-out-time')?.addEventListener('change', function() {
+    if (!this.value) return;
+    const [hours, minutes] = this.value.split(':').map(Number);
+    const inputTime = new Date();
+    inputTime.setHours(hours, minutes, 0);
+    
+    if (inputTime > new Date()) {
+        alert('Cannot use future time. Please select current or past time.');
+        this.value = '';
+    }
+});
+
+// Set default time to current time
+document.addEventListener('DOMContentLoaded', function() {
+    [document.getElementById('clock-in-time'), document.getElementById('clock-out-time')].forEach(input => {
+        if (input) {
+            const now = new Date();
+            input.value = String(now.getHours()).padStart(2, '0') + ':' + 
+                         String(now.getMinutes()).padStart(2, '0');
+        }
+    });
+});
+</script>
+@endpush
     padding: 9px 14px;
     background: #F0FDF4; color: #166534;
     border-radius: 6px; font-size: 12px; font-weight: 600;

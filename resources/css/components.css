@@ -2131,10 +2131,53 @@ tbody tr:last-child td {
 }
 
 /* ============================================================================
+   FORM INPUT STYLING - TIME INPUTS
+   ============================================================================ */
+
+.form-input-time {
+  background: var(--surface2, #f3f4f6);
+  border: 1px solid var(--border2, #e5e7eb);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text, #1f2937);
+  min-width: 120px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-input-time:focus {
+  border-color: rgba(37, 99, 235, 0.5);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input-time::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.4);
+}
+
+/* ============================================================================
    RESPONSIVE ENHANCEMENTS
    ============================================================================ */
 
 @media (max-width: 768px) {
+  [data-clock-form] {
+    flex-direction: column !important;
+    width: 100%;
+  }
+  
+  [data-clock-form] input,
+  [data-clock-form] button {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .form-input-time {
+    width: 100%;
+  }
+  
   .batch-buttons {
     flex-direction: column;
     width: 100%;
