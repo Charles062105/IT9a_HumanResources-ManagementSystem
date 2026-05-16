@@ -423,33 +423,108 @@ created_at, updated_at timestamp
 ## Entity Relationship Diagram
 
 ```
-┌────────────────────────────────────────────────────────────────────┐
-│                          USER (Auth)                               │
-│  ├─ has many: Employee (via user_id)                              │
-│  ├─ has many: HrmsNotification (via user_id)                      │
-│  ├─ has many: UserRequest (via user_id)                           │
-│  ├─ has many: Leave (as approved_by)                              │
-│  ├─ has many: Timesheet (as approved_by)                          │
-│  ├─ has many: Violation (as issued_by)                            │
-│  └─ has many: Performance (as reviewed_by)                        │
-└────────────┬──────────────────────────────────────────────────────┘
-             │ hasOne
-             ↓
-┌────────────────────────────────────────────────────────────────────┐
-│                        EMPLOYEE                                     │
-│  ├─ belongs to: User                                               │
-│  ├─ belongs to: Shift                                              │
-│  ├─ has many: Attendance (via employee_id)                         │
-│  ├─ has many: Leave (via employee_id)                              │
-│  ├─ has many: Timesheet (via employee_id)                          │
-│  ├─ has many: Violation (via employee_id)                          │
-│  ├─ has many: Performance (via employee_id)                        │
-│  └─ has many: AssignedTimesheet (via employee_id)                  │
-└────────────┬──────────────────────────────────────────────────────┘
-             │
-        ┌────┴──────────┬─────────────┬──────────────┬──────────────┐
-        ↓               ↓             ↓              ↓              ↓
-   ATTENDANCE      LEAVE         TIMESHEET      VIOLATION    PERFORMANCE
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              USERS Table (Auth)                              │
+│  id | name | email | password | role | status | email_verified_at | ...     │
+│  ↑                                                                           │
+│  │ One-to-One Relationship (user_id)                                        │
+│  │                                                                           │
+│  ├─────────────────────────────────────────────────────────────────────┐    │
+│                                                                         │    │
+│                      ┌──────────────────────────────┐                  │    │
+│                      │      EMPLOYEES Table         │                  │    │
+│                      │ id | user_id | employee_id   │◄─────────────────┘    │
+│                      │ first_name | last_name       │                       │
+│                      │ email | phone | department   │                       │
+│                      │ position | date_hired | ...  │                       │
+│                      │ shift_id ──────┐             │                       │
+│                      └────────┬────────┼─────────────┘                       │
+│                               │        │                                    │
+│                  ┌────────────┘        │ belongs to                         │
+│                  │                     ↓                                    │
+│                  │        ┌──────────────────────────┐                     │
+│                  │        │      SHIFTS Table        │                     │
+│                  │        │ id | name | start_time   │                     │
+│                  │        │ end_time | grace_period  │                     │
+│                  │        │ is_active | ...          │                     │
+│                  │        └──────────────────────────┘                     │
+│                  │                                                         │
+│                  │ has many (employee_id)                                 │
+│                  │                                                         │
+│    ┌─────────────┴──────────────────────────────────────────────┐         │
+│    │                                                             │         │
+│    ↓                                                             ↓         │
+│ ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  ┌──────────┐│
+│ │  ATTENDANCE    │  │     LEAVES     │  │  TIMESHEETS    │  │VIOLATIONS││
+│ │                │  │                │  │                │  │          ││
+│ │ id | emp_id    │  │ id | emp_id    │  │ id | emp_id    │  │id|emp_id ││
+│ │ date | time_in │  │ type | start   │  │week_start | end│  │level|off ││
+│ │ time_out|status│  │ end_date | days│  │total_hrs|ot_hrs│  │status|..││
+│ │ notes | ...    │  │ reason | status│  │approved_by | ..│  │issued_by││
+│ │                │  │approved_by | ..│  │assigned_ts_id  │  │          ││
+│ └────────────────┘  └────────────────┘  └────────────────┘  └──────────┘│
+│    ↓                    ↓                    ↓                    ↓       │
+│    └────────────────────┴────────────────────┴────────────────────┘       │
+│                         (all FK to employees)                             │
+│                                                                          │
+│                            PERFORMANCES                                 │
+│                         id | emp_id | period                            │
+│                         score | rating | feedback                       │
+│                         reviewed_by | ...                               │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+        ┌─────────────────────────────────────────┐
+        │  ASSIGNED_TIMESHEETS                    │
+        │  id | emp_id | title | description      │
+        │  expected_hours | due_date | status     │
+        │  approved_by | ...                      │
+        │  (has many Timesheets)                  │
+        └─────────────────────────────────────────┘
+                             ▲
+                             │ (assigned_timesheet_id in timesheets)
+                             │
+                      has many relation
+
+        ┌──────────────────────────────────┐
+        │  HRMS_NOTIFICATIONS              │
+        │  id | user_id | title | message  │
+        │  type | is_read | ...            │
+        │  (belongs to users)              │
+        └──────────────────────────────────┘
+                         ▲
+                         │ FK to users
+
+        ┌──────────────────────────────────┐
+        │  USER_REQUESTS                   │
+        │  id | user_id | type | details   │
+        │  status | resolved_by | ...      │
+        │  (belongs to users)              │
+        └──────────────────────────────────┘
+                         ▲
+                         │ FK to users
+
+        ┌──────────────────────────────────┐
+        │  AUDIT_LOGS                      │
+        │  id | admin_id | action | model  │
+        │  model_id | changes | ...        │
+        │  (FK: admin_id → users)          │
+        └──────────────────────────────────┘
+                         ▲
+                         │ FK to users
+
+        ┌──────────────────────────────────┐
+        │  PERMISSIONS (Planned)           │
+        │  id | name | description | ...   │
+        └──────────────────────────────────┘
+                         │
+                         │ has many
+                         ↓
+        ┌──────────────────────────────────┐
+        │  ROLE_PERMISSIONS (Planned)      │
+        │  id | role | permission_id | ... │
+        │  (FK: permission_id → permissions)
+        └──────────────────────────────────┘
 ```
 
 ## Model Code Examples
