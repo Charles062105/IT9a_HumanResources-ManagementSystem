@@ -43,9 +43,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('violations/{violation}/resolve', [ViolationController::class, 'resolve'])->name('violations.resolve');
     Route::get('performance/my', [PerformanceController::class, 'my'])->name('performance.my');
     Route::resource('performance', PerformanceController::class);
-    Route::resource('notifications', NotificationController::class);
+    
+    // Notification specific routes BEFORE resource (route order matters)
+    Route::get('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
-    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::resource('notifications', NotificationController::class);
 
     // Leave approval actions used by dashboard/leaves views
     Route::middleware('admin')->group(function () {
