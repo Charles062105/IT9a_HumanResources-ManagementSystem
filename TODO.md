@@ -9,3 +9,6 @@
 - [ ] Replace key inline styles with reusable CSS classes to reduce layout drift
 - [ ] Verify visually: attendance tables, modals, navigation, forms across breakpoints
 
+- [x] Create demo script (5–6 minutes) for guided system walkthrough
+
+

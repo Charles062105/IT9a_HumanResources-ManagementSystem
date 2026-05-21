@@ -36,16 +36,16 @@ Route::middleware('auth')->group(function () {
     // Attendance time-in/out endpoints used by views
     Route::post('attendance/time-in', [AttendanceController::class, 'timeIn'])->name('attendance.time-in');
     Route::post('attendance/time-out', [AttendanceController::class, 'timeOut'])->name('attendance.time-out');
-    Route::resource('leaves', LeaveController::class);
+    Route::resource('leaves', LeaveController::class, ['parameters' => ['leave' => 'leaf']]);
     Route::resource('timesheets', TimesheetController::class);
     Route::get('timesheets/my', [TimesheetController::class, 'my'])->name('timesheets.my');
     Route::resource('violations', ViolationController::class);
     Route::patch('violations/{violation}/resolve', [ViolationController::class, 'resolve'])->name('violations.resolve');
     Route::get('performance/my', [PerformanceController::class, 'my'])->name('performance.my');
     Route::resource('performance', PerformanceController::class);
-    
+
     // Notification specific routes BEFORE resource (route order matters)
-    Route::get('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::resource('notifications', NotificationController::class);
 

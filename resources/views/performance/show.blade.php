@@ -22,7 +22,7 @@
         <div class="form-group">
             <label>Employee</label>
             <div style="display:flex;align-items:center;gap:8px;padding-top:4px">
-                <div class="av av-md" style="background:#DBEAFE;color:#1E40AF;font-size:11px">{{ $performance->employee?->initials }}</div>
+                <div class="av av-sm" style="background:#DBEAFE;color:#1E40AF;font-size:11px">{{ $performance->employee?->initials }}</div>
                 <div>
                     <div style="font-size:13px;font-weight:500;color:var(--text)">{{ $performance->employee?->full_name ?? '—' }}</div>
                     <div style="font-size:11px;color:var(--text3)">{{ $performance->employee?->department }}</div>
@@ -71,7 +71,7 @@
         <div>
             <span style="font-weight:500">Reviewed on:</span> {{ $performance->created_at->format('M j, Y') }}
         </div>
-        @if($performance->updated_at->notEqualTo($performance->created_at))
+        @if($performance->updated_at->diffInSeconds($performance->created_at) !== 0)
         <div>
             <span style="font-weight:500">Last updated:</span> {{ $performance->updated_at->format('M j, Y') }}
         </div>

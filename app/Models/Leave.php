@@ -12,11 +12,23 @@ class Leave extends Model
     ];
 
     protected $casts = [
-        'start_date'  => 'date',
-        'end_date'    => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'approved_at' => 'datetime',
     ];
 
-    public function employee() { return $this->belongsTo(Employee::class); }
-    public function approver() { return $this->belongsTo(User::class, 'approved_by'); }
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'id';
+    }
 }

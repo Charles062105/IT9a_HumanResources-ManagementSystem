@@ -90,9 +90,11 @@ class UserRequestController extends Controller
             abort(403, 'Cannot change your own role.');
         }
 
-        // Prevent attempting to make someone admin if they already are
+        // If user is already an admin, redirect to revoke form instead of error
         if ($user->isAdmin()) {
-            abort(403, 'User is already an admin.');
+            return redirect()
+                ->route('users.revoke-admin-form', $user)
+                ->with('info', "{$user->name} is already an admin. You can revoke their admin role here.");
         }
 
         // Offer choice between super_admin or sub_admin
@@ -115,10 +117,13 @@ class UserRequestController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        // If user already has the same role, block redundant update
+        // If user already has the same role, redirect to revoke form with info
         if ($user->role === $validated['role']) {
             $currentRole = ucfirst(str_replace('_', ' ', $user->role));
-            abort(403, "User is already a {$currentRole}.");
+
+            return redirect()
+                ->route('users.revoke-admin-form', $user)
+                ->with('info', "{$user->name} is already a {$currentRole}.");
         }
 
         $user->update(['role' => $validated['role']]);
@@ -135,7 +140,9 @@ class UserRequestController extends Controller
             'reference_notes' => $validated['notes'] ?? 'No notes provided',
         ]);
 
-        return redirect()->back()->with('success', "{$user->name} is now a {$roleLabel}".($validated['notes'] ?? false ? '. Reason: '.$validated['notes'] : '.'));
+        return redirect()
+            ->route('users.revoke-admin-form', $user)
+            ->with('success', "{$user->name} is now a {$roleLabel}".($validated['notes'] ?? false ? '. Reason: '.$validated['notes'] : '.'));
     }
 
     public function showRevokeAdmin(User $user)
@@ -149,9 +156,11 @@ class UserRequestController extends Controller
             abort(403, 'Cannot revoke your own admin role.');
         }
 
-        // Prevent attempting to revoke admin role from non-admin user
+        // If user is not an admin, redirect to make-admin form instead of error
         if (! $user->isAdmin()) {
-            abort(403, 'User is not an admin.');
+            return redirect()
+                ->route('users.make-admin', $user)
+                ->with('info', "{$user->name} is not an admin. You can make them an admin here.");
         }
 
         // Prevent revoking if it's the last super admin (with 5-minute cache)
@@ -160,7 +169,9 @@ class UserRequestController extends Controller
                 return User::where('role', User::ROLE_SUPER_ADMIN)->count();
             });
             if ($superAdminCount <= 1) {
-                abort(403, 'Cannot revoke the last Super Admin in the system.');
+                return redirect()
+                    ->route('users.make-admin', $user)
+                    ->with('warning', 'Cannot revoke the last Super Admin in the system.');
             }
         }
 

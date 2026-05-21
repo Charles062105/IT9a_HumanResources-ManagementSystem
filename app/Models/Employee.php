@@ -65,12 +65,18 @@ class Employee extends Model
 
     public function getFullNameAttribute()
     {
-        return "$this->first_name $this->last_name";
+        $first = $this->first_name ?? '';
+        $last = $this->last_name ?? '';
+
+        return trim("$first $last") ?: '—';
     }
 
     public function getInitialsAttribute()
     {
-        return strtoupper(substr($this->first_name, 0, 1).substr($this->last_name, 0, 1));
+        $f = $this->first_name ? strtoupper(substr($this->first_name, 0, 1)) : '';
+        $l = $this->last_name ? strtoupper(substr($this->last_name, 0, 1)) : '';
+
+        return $f.$l ?: '??';
     }
 
     public function getYearsOfServiceAttribute()

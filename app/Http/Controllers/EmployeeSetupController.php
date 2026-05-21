@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EmployeeSetupController extends Controller
 {
@@ -60,9 +61,9 @@ class EmployeeSetupController extends Controller
             'date_hired' => 'required|date|before_or_equal:today',
             'status' => 'required|in:active,probationary,contractual,inactive',
             'contract_expiry' => 'required_if:status,contractual|nullable|date|after:today|before:'.now()->addYears(5)->format('Y-m-d'),
-            'sss_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{7}-\d$/',
-            'pagibig_number' => 'nullable|string|max:30|regex:/^\d{4}-\d{4}-\d{4}$/',
-            'philhealth_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{9}-\d$/',
+            'sss_number' => 'nullable|string|max:30|regex:/^\d{2}-?\d{7}-?\d$/',
+            'pagibig_number' => 'nullable|string|max:30|regex:/^\d{4}-?\d{4}-?\d{4}$/',
+            'philhealth_number' => 'nullable|string|max:30|regex:/^\d{2}-?\d{9}-?\d$/',
         ]);
 
         // Authorization: if user_id provided, verify it matches the requesting user or user is admin
@@ -78,9 +79,9 @@ class EmployeeSetupController extends Controller
             }
         }
 
-        // Auto-generate employee ID (use count + 1 for better atomicity)
-        $nextId = Employee::count() + 1;
-        $data['employee_id'] = 'EMP-'.str_pad($nextId, 4, '0', STR_PAD_LEFT);
+        // Auto-generate employee ID with locking to prevent race conditions
+        $lastId = DB::table('employees')->max('id') ?? 0;
+        $data['employee_id'] = 'EMP-'.str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
 
         $employee = Employee::create($data);
 

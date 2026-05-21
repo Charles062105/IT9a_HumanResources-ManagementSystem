@@ -103,4 +103,88 @@
     </div>
 </div>
 
+@push('scripts')
+<script>
+(function() {
+    // Inline fallback handler - ensures form works even if module script fails
+    var form = document.getElementById('adminRoleForm');
+    var submitBtn = document.getElementById('submitBtn');
+    var submitText = document.getElementById('submitText');
+    var submitLoader = document.getElementById('submitLoader');
+    var formConfirmed = false;
+
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            // Check if already submitted or confirmed
+            if (formConfirmed) {
+                return true;
+            }
+
+            // Validate role selection
+            var roleSelect = document.querySelector('input[name="role"]:checked');
+            if (!roleSelect) {
+                e.preventDefault();
+                alert('Please select an admin role before submitting.');
+                return false;
+            }
+
+            e.preventDefault();
+            formConfirmed = true;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            if (submitText) submitText.style.display = 'none';
+            if (submitLoader) submitLoader.style.display = 'inline-block';
+
+            // Get role label for confirmation
+            var roleLabelEl = roleSelect.closest('.radio-option') && roleSelect.closest('.radio-option').querySelector('.radio-title');
+            var roleLabel = roleLabelEl ? roleLabelEl.textContent.trim() : 'Admin';
+            var userName = form.dataset.userName || 'this user';
+
+            // Create confirmation dialog
+            var overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;';
+            overlay.innerHTML = '<div class="modal-dialog" style="background:#fff;border-radius:8px;padding:24px;max-width:400px;width:90%;box-shadow:0 4px 24px rgba(0,0,0,0.15);">' +
+                '<div style="font-weight:600;font-size:18px;margin-bottom:12px;">Assign Admin Role</div>' +
+                '<div style="color:#64748b;margin-bottom:20px;">' +
+                '<p>You are about to assign the <strong>' + roleLabel + '</strong> role to <strong>' + userName + '</strong>.</p>' +
+                '<p style="margin-top:8px;">This action will grant admin privileges and send a notification to the user.</p>' +
+                '</div>' +
+                '<div style="display:flex;gap:12px;justify-content:flex-end;">' +
+                '<button type="button" id="cancelRoleBtn" style="padding:8px 16px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;">Cancel</button>' +
+                '<button type="button" id="confirmRoleBtn" style="padding:8px 16px;border:none;border-radius:6px;background:#3b82f6;color:#fff;cursor:pointer;">Confirm</button>' +
+                '</div>' +
+                '</div>';
+            document.body.appendChild(overlay);
+
+            document.getElementById('cancelRoleBtn').addEventListener('click', function() {
+                overlay.remove();
+                formConfirmed = false;
+                submitBtn.disabled = false;
+                if (submitText) submitText.style.display = '';
+                if (submitLoader) submitLoader.style.display = '';
+            });
+
+            document.getElementById('confirmRoleBtn').addEventListener('click', function() {
+                overlay.remove();
+                form.submit();
+            });
+
+            // Close on overlay click
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                    formConfirmed = false;
+                    submitBtn.disabled = false;
+                    if (submitText) submitText.style.display = '';
+                    if (submitLoader) submitLoader.style.display = '';
+                }
+            });
+        });
+    }
+})();
+</script>
+@endpush
+
 </x-app-layout>

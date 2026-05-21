@@ -28,62 +28,60 @@
 </div>
 
 {{-- LIVE CLOCK & TIME IN/OUT --}}
-@if($todayAttendance || auth()->user()->employee)
-<div style="margin:20px 0">
+@if($currentEmployee)
+<div class="clock-card-wrap" style="margin:20px 0">
     <div class="clock-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap">
-            <div>
+        <div class="clock-card-inner" style="display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap">
+            <div class="clock-info" style="animation:slideInLeft 0.6s ease-out">
                 <div class="clock-label">Your Clock</div>
-                <div style="font-size:48px;font-weight:700;font-family:monospace;letter-spacing:2px" id="live-clock">{{ now()->format('H:i:s') }}</div>
+                <div class="clock-time-big" id="dashboard-clock">{{ now()->format('H:i:s') }}</div>
                 <div class="clock-date">{{ now()->format('l, F j, Y') }}</div>
             </div>
 
-            <div style="flex:1;min-width:280px">
+            <div class="clock-section">
                 @if($todayAttendance)
                     @if($todayAttendance->time_in && !$todayAttendance->time_out)
-                        <div style="text-align:center;margin-bottom:16px">
-                            <div style="font-size:13px;opacity:0.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Status</div>
-                            <div style="font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px">
-                                <span class="pulse-dot" style="display:inline-block;width:8px;height:8px;background:#4ADE80;border-radius:50%;animation:pulse 2s infinite"></span>
+                        <div class="clock-panel clock-panel-bordered">
+                            <div class="clock-panel-label">Status</div>
+                            <div class="clock-status-text" style="display:flex;align-items:center;justify-content:center;gap:8px">
+                                <span class="clock-panel-success-dot"></span>
                                 Clocked In
                             </div>
-                            <div style="font-size:12px;opacity:0.85;margin-top:4px">Since {{ $todayAttendance->time_in->format('H:i A') }}</div>
+                            <div class="clock-panel-sub">Since {{ $todayAttendance->time_in->format('H:i A') }}</div>
                         </div>
-                        <form method="POST" action="{{ route('attendance.time-out') }}" style="display:flex;flex-direction:column;gap:8px">
+                        <form method="POST" action="{{ route('attendance.time-out') }}">
                             @csrf
-                            <input type="time" name="time" value="{{ now()->format('H:i') }}" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:6px;padding:8px 12px;font-size:14px;text-align:center;width:140px;margin:0 auto">
-                            <button type="submit" class="btn-danger" style="flex:1;padding:12px;border:none;cursor:pointer;background:white;color:#764BA2;font-weight:600;border-radius:8px;font-size:13px">
-                                🔴 Time Out
-                            </button>
+                            <button type="submit" class="clock-btn clock-btn-timeout">Time Out</button>
                         </form>
                     @elseif($todayAttendance->time_in && $todayAttendance->time_out)
-                        <div style="text-align:center">
-                            <div style="font-size:13px;opacity:0.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Status</div>
-                            <div style="font-size:18px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px">
-                                <span style="display:inline-block;width:8px;height:8px;background:#9CA3AF;border-radius:50%"></span>
+                        <div class="clock-panel clock-panel-bordered">
+                            <div class="clock-panel-label">Status</div>
+                            <div class="clock-status-text" style="display:flex;align-items:center;justify-content:center;gap:8px">
+                                <span class="clock-panel-gray-dot"></span>
                                 Clocked Out
                             </div>
-                            <div style="font-size:12px;opacity:0.85;margin-bottom:12px">
-                                In: {{ $todayAttendance->time_in->format('H:i A') }} • Out: {{ $todayAttendance->time_out->format('H:i A') }}<br>
-                                <strong>Total: {{ $todayAttendance->hours_worked ?? 0 }}h</strong>
+                            <div class="clock-panel-sub">
+                                <div style="margin-bottom:8px">In: <strong>{{ $todayAttendance->time_in->format('H:i A') }}</strong> &middot; Out: <strong>{{ $todayAttendance->time_out->format('H:i A') }}</strong></div>
+                                <div class="clock-hours-total">Total: {{ $todayAttendance->hours_worked ?? 0 }}h worked</div>
                             </div>
                         </div>
                     @else
-                        <div style="text-align:center">
-                            <div style="font-size:13px;opacity:0.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Status</div>
-                            <div style="font-size:18px;font-weight:600;margin-bottom:12px">Not Started</div>
-                            <form method="POST" action="{{ route('attendance.time-in') }}" style="display:flex;flex-direction:column;gap:8px;align-items:center">
+                        <div class="clock-panel">
+                            <div class="clock-panel-label">Status</div>
+                            <div class="clock-status-text" style="color:#FCD34D;font-size:18px">Not Started</div>
+                            <form method="POST" action="{{ route('attendance.time-in') }}">
                                 @csrf
-                                <input type="time" name="time" value="{{ now()->format('H:i') }}" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:6px;padding:8px 12px;font-size:14px;text-align:center;width:140px">
-                                <button type="submit" class="btn-success" style="flex:1;padding:12px;border:none;cursor:pointer;background:white;color:#667EEA;font-weight:600;border-radius:8px;font-size:13px;width:100%">
-                                    🟢 Time In
-                                </button>
+                                <button type="submit" class="clock-btn clock-btn-timein">Clock In</button>
                             </form>
                         </div>
                     @endif
                 @else
-                    <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.1);border-radius:8px">
-                        <div style="font-size:12px;opacity:0.9">No employee record linked to your account</div>
+                    <div class="clock-panel clock-panel-dashed">
+                        <div class="clock-panel-label" style="font-size:12px">No attendance record yet</div>
+                        <form method="POST" action="{{ route('attendance.time-in') }}">
+                            @csrf
+                            <button type="submit" class="clock-btn clock-btn-timein" style="padding:12px">Clock In Now</button>
+                        </form>
                     </div>
                 @endif
             </div>
@@ -163,10 +161,10 @@
         </div>
         @forelse($pendingLeaveList as $leave)
         <div class="leave-item">
-            <div class="av" style="background:#DBEAFE;color:#1E40AF">{{ $leave->employee->initials }}</div>
+            <div class="av" style="background:#DBEAFE;color:#1E40AF">{{ $leave->employee?->initials ?? '??' }}</div>
             <div>
-                <div style="font-size:12px;font-weight:500">{{ $leave->employee->full_name }}</div>
-                <div style="font-size:10px;color:var(--text3)">{{ ucfirst($leave->type) }} · {{ $leave->days }}d · {{ $leave->start_date->format('M j') }}–{{ $leave->end_date->format('M j') }}</div>
+                <div style="font-size:12px;font-weight:500">{{ $leave->employee?->full_name ?? 'Unknown' }}</div>
+                <div style="font-size:10px;color:var(--text3)">{{ ucfirst($leave->type) }} · {{ $leave->days }}d · {{ $leave->start_date?->format('M j') }}–{{ $leave->end_date?->format('M j') }}</div>
             </div>
             <div class="l-acts">
                 <span class="td-muted">Pending</span>
@@ -194,7 +192,7 @@
             <div class="viol-item">
                 <div class="vb" style="background:{{ $badge['bg'] }};color:{{ $badge['text'] }}">{{ $badge['label'] }}</div>
                 <div>
-                    <div style="font-size:12px;font-weight:500">{{ $v->employee->full_name }}</div>
+                    <div style="font-size:12px;font-weight:500">{{ $v->employee?->full_name ?? '—' }}</div>
                     <div style="font-size:10px;color:var(--text3)">{{ $v->level }} · {{ $v->offense }}</div>
                 </div>
                 <div style="font-size:10px;color:var(--text3);margin-left:auto">{{ $v->date->format('M j') }}</div>
@@ -210,15 +208,15 @@
         <div class="card-body" style="padding:4px 18px 12px">
             @forelse($milestones as $m)
             <div class="ms-item">
-                <div class="av" style="background:#FEE2E2;color:#991B1B">{{ $m['employee']->initials }}</div>
+                <div class="av" style="background:#FEE2E2;color:#991B1B">{{ $m->employee?->initials ?? '??' }}</div>
                 <div>
-                    <div style="font-size:12px;font-weight:500">{{ $m['employee']->full_name }}</div>
+                    <div style="font-size:12px;font-weight:500">{{ $m->employee?->full_name ?? '—' }}</div>
                     <div style="font-size:10px;color:var(--text3)">
-                        {{ $m['employee']->department }}
-                        @if($m['type'] === 'anniversary') · {{ $m['years'] }} year{{ $m['years'] !== 1 ? 's' : '' }} @endif
+                        {{ $m->employee?->department ?: '—' }}
+                        @if($m->type === 'anniversary') · {{ $m->years }} year{{ $m->years !== 1 ? 's' : '' }} @endif
                     </div>
                 </div>
-                @if($m['type'] === 'birthday')
+                @if($m->type === 'birthday')
                 <div class="ms-tag" style="background:#EDE9FE;color:#5B21B6">Birthday</div>
                 @else
                 <div class="ms-tag" style="background:#FEF3C7;color:#92400E">Anniversary</div>
@@ -233,12 +231,22 @@
 
 @push('scripts')
 <script>
-// Set chart data for auto-init via app.js / chart-init.js
 window.__chartData = {
     labels: {!! json_encode($chartDays) !!},
     present: {!! json_encode($chartPresent) !!},
     absent: {!! json_encode($chartAbsent) !!}
 };
+
+(function() {
+    const clock = document.getElementById('dashboard-clock');
+    if (!clock) return;
+    function tick() {
+        const n = new Date();
+        clock.textContent = String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0') + ':' + String(n.getSeconds()).padStart(2, '0');
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
 </script>
 @endpush
 

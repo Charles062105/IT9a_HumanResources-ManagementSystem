@@ -105,6 +105,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    startInput.addEventListener('input', calculateDuration);
+    endInput.addEventListener('input', calculateDuration);
     startInput.addEventListener('change', calculateDuration);
     endInput.addEventListener('change', calculateDuration);
 

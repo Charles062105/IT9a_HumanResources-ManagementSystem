@@ -17,7 +17,7 @@ class TimesheetController extends Controller
     {
         $query = Timesheet::with(['employee', 'approver'])->latest();
 
-        if (auth()->user()->isEmployee() && ! auth()->user()->isAdmin()) {
+        if (auth()->user()?->isEmployee()) {
             $employee = auth()->user()->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);
@@ -27,7 +27,11 @@ class TimesheetController extends Controller
         }
 
         if ($s = request('search')) {
-            $query->whereHas('employee', fn ($q) => $q->where('first_name', 'like', "%$s%")->orWhere('last_name', 'like', "%$s%"));
+            $query->whereHas('employee', fn ($q) => $q
+                ->where(function ($inner) use ($s) {
+                    $inner->where('first_name', 'like', "%$s%")
+                        ->orWhere('last_name', 'like', "%$s%");
+                }));
         }
         if ($dp = request('department')) {
             $query->whereHas('employee', fn ($q) => $q->where('department', $dp));
@@ -145,6 +149,13 @@ class TimesheetController extends Controller
             'approved_by' => auth()->id(),
             'rejection_reason' => $request->input('reason'),
         ]);
+
+        if ($timesheet->assigned_timesheet_id) {
+            $task = AssignedTimesheet::find($timesheet->assigned_timesheet_id);
+            if ($task) {
+                $task->update(['status' => 'rejected']);
+            }
+        }
 
         HrmsNotification::create([
             'title' => 'Timesheet Rejected',

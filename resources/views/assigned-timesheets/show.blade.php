@@ -14,34 +14,34 @@
 <div class="section-card">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
         <div>
-            <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Employee</div>
+            <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Employee</div>
             <div style="font-weight:600">{{ $assignedTimesheet->employee?->full_name }}</div>
         </div>
         <div>
-            <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Status</div>
+            <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Status</div>
             @php $sc = match($assignedTimesheet->status) { 'approved' => 'sp-ok', 'rejected' => 'sp-no', 'submitted' => 'sp-ok', 'in_progress' => 'sp-pend', default => 'sp-pend' }; @endphp
             <span class="sp {{ $sc }}"><span class="d"></span>{{ ucfirst(str_replace('_',' ',$assignedTimesheet->status)) }}</span>
         </div>
         <div>
-            <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Due Date</div>
+            <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Due Date</div>
             <div style="font-weight:600">{{ $assignedTimesheet->due_date?->format('M j, Y') }}</div>
         </div>
         <div>
-            <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Expected Hours</div>
+            <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Expected Hours</div>
             <div style="font-weight:600">{{ $assignedTimesheet->expected_hours }}h</div>
         </div>
     </div>
 
     @if($assignedTimesheet->description)
     <div style="margin-bottom:24px">
-        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Description</div>
+        <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Description</div>
         <div style="background:#f9fafb;border-radius:8px;padding:12px">{{ $assignedTimesheet->description }}</div>
     </div>
     @endif
 
     @if($assignedTimesheet->admin_notes)
     <div style="margin-bottom:24px">
-        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Admin Notes</div>
+        <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Admin Notes</div>
         <div style="background:#fef3c7;border-radius:8px;padding:12px">{{ $assignedTimesheet->admin_notes }}</div>
     </div>
     @endif

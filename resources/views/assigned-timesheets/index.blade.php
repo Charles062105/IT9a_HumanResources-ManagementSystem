@@ -93,11 +93,12 @@
 </div>
 
 {{-- Delete Confirmation Modal --}}
-<div id="deleteModal" class="modal-overlay">
+<div id="deleteModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="delTitle" tabindex="-1">
     <div class="modal-dialog" style="max-width:400px">
         <div class="modal-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Delete Assigned Task
+            <span id="delTitle">Delete Assigned Task</span>
+            <button type="button" class="modal-close-btn" onclick="closeDeleteModal()" aria-label="Close modal">×</button>
         </div>
         <div class="modal-body">
             <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
@@ -117,14 +118,23 @@
 @push('scripts')
 <script>
 function confirmDelete(id, name) {
-    document.getElementById('delName').textContent = name;
+    document.getElementById('delName').textContent = name || '—';
     var m = document.getElementById('deleteModal');
-    m.style.display = 'flex'; m.classList.add('show');
+    m.classList.add('show');
+    m.setAttribute('aria-hidden', 'false');
     document.getElementById('deleteForm').action = '{{ route('assigned-timesheets.destroy', '__ID__') }}'.replace('__ID__', id);
+    m.querySelector('button[type="submit"]').focus();
 }
 function closeDeleteModal() {
     var m = document.getElementById('deleteModal');
-    m.style.display = 'none'; m.classList.remove('show');
+    m.classList.remove('show');
+    m.setAttribute('aria-hidden', 'true');
+}
+var delModal = document.getElementById('deleteModal');
+if (delModal) {
+    delModal.addEventListener('click', function(e) {
+        if (e.target === delModal) closeDeleteModal();
+    });
 }
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeDeleteModal();

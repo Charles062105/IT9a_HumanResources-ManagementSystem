@@ -1,25 +1,26 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+<x-guest-layout title="Forgot Password">
+    <div class="auth-sub" style="margin-bottom:20px">
+        Forgot your password? No problem. Just let us know your email address and we will email you a password reset link.
     </div>
 
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @if (session('status'))
+    <div class="flash flash-success" style="border-radius:8px;margin-bottom:16px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        {{ session('status') }}
+    </div>
+    @endif
 
     <form method="POST" action="{{ route('password.email') }}">
         @csrf
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <div class="form-group" style="margin-bottom:16px">
+            <label>Email address</label>
+            <input type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="email" placeholder="name@company.com">
+            @error('email')<div class="error-msg">{{ $message }}</div>@enderror
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
+        <div style="display:flex;justify-content:flex-end;margin-top:20px">
+            <button type="submit" class="btn-primary">Email Password Reset Link</button>
         </div>
     </form>
 </x-guest-layout>

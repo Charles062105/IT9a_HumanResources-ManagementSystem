@@ -84,7 +84,7 @@
             <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
                 <span style="color:var(--text3)">Role</span>
                 <span style="font-weight:500">
-                    <span style="background:{{ auth()->user()->isAdmin() ? '#ECFDF5' : '#F3F4F6' }};color:{{ auth()->user()->isAdmin() ? '#065F46' : '#374151' }};padding:3px 8px;border-radius:4px;font-size:11px">
+                    <span style="background:{{ auth()->user()->isAdmin() ? 'var(--success-lt)' : 'var(--bg-secondary)' }};color:{{ auth()->user()->isAdmin() ? 'var(--success)' : 'var(--text2)' }};padding:3px 8px;border-radius:4px;font-size:11px">
                         {{ ucfirst(auth()->user()->role) }}
                     </span>
                 </span>

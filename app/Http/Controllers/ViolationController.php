@@ -15,7 +15,7 @@ class ViolationController extends Controller
         $query = Violation::with('employee')->latest();
 
         // Employees can only see their own violations
-        if (Auth::user()->isEmployee()) {
+        if (Auth::user()?->isEmployee()) {
             $employee = Auth::user()->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);
@@ -25,7 +25,11 @@ class ViolationController extends Controller
         }
 
         if ($s = $request->search) {
-            $query->whereHas('employee', fn ($q) => $q->where('first_name', 'like', "%$s%")->orWhere('last_name', 'like', "%$s%"));
+            $query->whereHas('employee', fn ($q) => $q
+                ->where(function ($inner) use ($s) {
+                    $inner->where('first_name', 'like', "%$s%")
+                        ->orWhere('last_name', 'like', "%$s%");
+                }));
         }
         if ($l = $request->level) {
             $query->where('level', $l);
@@ -56,7 +60,7 @@ class ViolationController extends Controller
     public function create()
     {
         // Employees should only be able to log violations for themselves.
-        if (Auth::user()->isEmployee()) {
+        if (Auth::user()?->isEmployee()) {
             $employee = Auth::user()->employee;
             if (! $employee) {
                 abort(403);
@@ -73,7 +77,7 @@ class ViolationController extends Controller
     public function store(Request $request)
     {
         // If the user is an employee, force employee_id to their own record.
-        if (Auth::user()->isEmployee()) {
+        if (Auth::user()?->isEmployee()) {
             $employee = Auth::user()->employee;
             if (! $employee) {
                 abort(403);

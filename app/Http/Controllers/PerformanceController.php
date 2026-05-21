@@ -13,7 +13,7 @@ class PerformanceController extends Controller
         $query = Performance::with('employee')->latest();
 
         // Employees can only see their own performance reviews
-        if (auth()->user()->isEmployee()) {
+        if (auth()->user()?->isEmployee()) {
             $employee = auth()->user()->employee;
             if ($employee) {
                 $query->where('employee_id', $employee->id);
@@ -23,7 +23,11 @@ class PerformanceController extends Controller
         }
 
         if ($s = $request->search) {
-            $query->whereHas('employee', fn ($q) => $q->where('first_name', 'like', "%$s%")->orWhere('last_name', 'like', "%$s%"));
+            $query->whereHas('employee', fn ($q) => $q
+                ->where(function ($inner) use ($s) {
+                    $inner->where('first_name', 'like', "%$s%")
+                        ->orWhere('last_name', 'like', "%$s%");
+                }));
         }
         if ($dp = $request->department) {
             $query->whereHas('employee', fn ($q) => $q->where('department', $dp));

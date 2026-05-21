@@ -27,8 +27,10 @@ class LeaveController extends Controller
 
         if ($s = $request->search) {
             $query->whereHas('employee', fn ($q) => $q
-                ->where('first_name', 'like', "%$s%")
-                ->orWhere('last_name', 'like', "%$s%"));
+                ->where(function ($inner) use ($s) {
+                    $inner->where('first_name', 'like', "%$s%")
+                        ->orWhere('last_name', 'like', "%$s%");
+                }));
         }
         if ($t = $request->type) {
             $query->where('type', $t);
@@ -37,7 +39,8 @@ class LeaveController extends Controller
             $query->where('status', $st);
         }
         if ($m = $request->month) {
-            $query->whereMonth('start_date', date('m', strtotime($m)));
+            [$year, $month] = explode('-', $m);
+            $query->whereYear('start_date', $year)->whereMonth('start_date', $month);
         }
 
         $leaves = $query->paginate(20)->appends($request->all());
@@ -78,7 +81,7 @@ class LeaveController extends Controller
 
     public function store(Request $request)
     {
-        if (! auth()->check() || ! auth()->user()->isAdmin() && ! auth()->user()->isEmployee()) {
+        if (! auth()->check() || (! auth()->user()->isAdmin() && ! auth()->user()->isEmployee())) {
             abort(403, 'Unauthorized.');
         }
 
@@ -116,8 +119,10 @@ class LeaveController extends Controller
         return back()->with('success', 'Leave request submitted.');
     }
 
-    public function show(Leave $leave)
+    public function show($id)
     {
+        $leave = Leave::with(['employee', 'approver'])->findOrFail($id);
+
         if (auth()->check() && auth()->user()->isEmployee()) {
             $employee = auth()->user()->employee;
             if (! $employee || (int) $leave->employee_id !== (int) $employee->id) {
@@ -134,6 +139,7 @@ class LeaveController extends Controller
             abort(403, 'Only admins can edit leave requests.');
         }
 
+        $leave->load(['employee.user', 'approver']);
         $employees = Employee::where('status', 'active')->orderBy('first_name')->get();
 
         return view('leaves.edit', compact('leave', 'employees'));
@@ -174,27 +180,37 @@ class LeaveController extends Controller
             'approved_at' => now(),
         ]);
 
+        // Refresh so approved_at is current for the notes below
+        $leave->refresh();
+
         // Auto-create ON_LEAVE attendance records for each day of leave
         $currentDate = Carbon::parse($leave->start_date);
         $endDate = Carbon::parse($leave->end_date);
 
         while ($currentDate <= $endDate) {
-            Attendance::updateOrCreate(
-                [
-                    'employee_id' => $leave->employee_id,
-                    'date' => $currentDate->toDateString(),
-                ],
-                [
-                    'status' => 'on_leave',
-                    'notes' => "On {$leave->type} leave (approved {$leave->approved_at->format('M j, Y')})",
-                ]
-            );
+            $existing = Attendance::where('employee_id', $leave->employee_id)
+                ->whereDate('date', $currentDate->toDateString())
+                ->first();
+
+            // Only create/update if no time was already recorded (preserve clock-in/out data)
+            if (! $existing || ($existing && ! $existing->time_in && ! $existing->time_out)) {
+                Attendance::updateOrCreate(
+                    [
+                        'employee_id' => $leave->employee_id,
+                        'date' => $currentDate->toDateString(),
+                    ],
+                    [
+                        'status' => 'on_leave',
+                        'notes' => "On {$leave->type} leave (approved {$leave->approved_at?->format('M j, Y')})",
+                    ]
+                );
+            }
             $currentDate->addDay();
         }
 
         HrmsNotification::create([
             'title' => 'Leave Approved',
-            'message' => "Your {$leave->type} leave ({$leave->start_date->format('M j')} – {$leave->end_date->format('M j')}) has been approved.",
+            'message' => "Your {$leave->type} leave ({$leave->start_date?->format('M j')} – {$leave->end_date?->format('M j')}) has been approved.",
             'type' => 'success',
             'user_id' => optional($leave->employee)->user_id,
         ]);
@@ -217,7 +233,7 @@ class LeaveController extends Controller
 
         HrmsNotification::create([
             'title' => 'Leave Request Denied',
-            'message' => "Your {$leave->type} leave request ({$leave->start_date->format('M j')} – {$leave->end_date->format('M j')}) has been denied.",
+            'message' => "Your {$leave->type} leave request ({$leave->start_date?->format('M j')} – {$leave->end_date?->format('M j')}) has been denied.",
             'type' => 'error',
             'user_id' => optional($leave->employee)->user_id,
         ]);

@@ -40,9 +40,8 @@
                             </div>
                             <div class="clock-panel-sub">Since {{ $todayAttendance->time_in->format('H:i A') }}</div>
                         </div>
-                        <form method="POST" action="{{ route('attendance.time-out') }}" class="clock-form">
+                        <form method="POST" action="{{ route('attendance.time-out') }}">
                             @csrf
-                            <input type="time" name="time" class="clock-time-input" value="{{ now()->format('H:i') }}">
                             <button type="submit" class="clock-btn clock-btn-timeout">Time Out</button>
                         </form>
                     @elseif($todayAttendance->time_in && $todayAttendance->time_out)
@@ -61,9 +60,8 @@
                         <div class="clock-panel">
                             <div class="clock-panel-label">Status</div>
                             <div class="clock-status-text" style="color:#FCD34D;font-size:18px">Not Started</div>
-                            <form method="POST" action="{{ route('attendance.time-in') }}" class="clock-form" style="align-items:center">
+                            <form method="POST" action="{{ route('attendance.time-in') }}">
                                 @csrf
-                                <input type="time" name="time" class="clock-time-input" value="{{ now()->format('H:i') }}">
                                 <button type="submit" class="clock-btn clock-btn-timein">Clock In</button>
                             </form>
                         </div>
@@ -71,9 +69,8 @@
                 @else
                     <div class="clock-panel clock-panel-dashed">
                         <div class="clock-panel-label" style="font-size:12px">No attendance record yet</div>
-                        <form method="POST" action="{{ route('attendance.time-in') }}" class="clock-form" style="align-items:center">
+                        <form method="POST" action="{{ route('attendance.time-in') }}">
                             @csrf
-                            <input type="time" name="time" class="clock-time-input" value="{{ now()->format('H:i') }}">
                             <button type="submit" class="clock-btn clock-btn-timein" style="padding:12px">Clock In Now</button>
                         </form>
                     </div>
@@ -212,12 +209,21 @@
 
 @push('scripts')
 <script>
-// Set chart data for auto-init via app.js / chart-init.js
 window.__chartData = {
     labels: {!! json_encode($chartDays) !!},
     present: {!! json_encode($chartPresent) !!},
     absent: {!! json_encode($chartAbsent) !!}
 };
+(function() {
+    const clock = document.getElementById('live-clock');
+    if (!clock) return;
+    function update() {
+        const n = new Date();
+        clock.textContent = String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0') + ':' + String(n.getSeconds()).padStart(2, '0');
+    }
+    update();
+    setInterval(update, 1000);
+})();
 </script>
 @endpush
 

@@ -124,11 +124,13 @@
             <div class="form-group">
                 <label for="sss_number">SSS number</label>
                 <input type="text" id="sss_number" name="sss_number" value="{{ old('sss_number', $employee->sss_number) }}" placeholder="00-0000000-0" title="Format: 00-0000000-0" class="{{ $errors->has('sss_number') ? 'input-error' : '' }}">
+                <div class="form-help">Format: XX-XXXXXXX-X (e.g., 12-3456789-0) — hyphens optional</div>
                 @error('sss_number')<div class="error-msg">{{ $message }}</div>@enderror
             </div>
             <div class="form-group">
                 <label for="pagibig_number">Pag-IBIG number</label>
                 <input type="text" id="pagibig_number" name="pagibig_number" value="{{ old('pagibig_number', $employee->pagibig_number) }}" placeholder="0000-0000-0000" title="Format: 0000-0000-0000" class="{{ $errors->has('pagibig_number') ? 'input-error' : '' }}">
+                <div class="form-help">Format: XXXX-XXXX-XXXX (e.g., 1234-5678-9012) — hyphens optional</div>
                 @error('pagibig_number')<div class="error-msg">{{ $message }}</div>@enderror
             </div>
         </div>
@@ -136,6 +138,7 @@
             <div class="form-group">
                 <label for="philhealth_number">PhilHealth number</label>
                 <input type="text" id="philhealth_number" name="philhealth_number" value="{{ old('philhealth_number', $employee->philhealth_number) }}" placeholder="00-000000000-0" title="Format: 00-000000000-0" class="{{ $errors->has('philhealth_number') ? 'input-error' : '' }}">
+                <div class="form-help">Format: XX-XXXXXXXX-X (e.g., 12-345678901-2) — hyphens optional</div>
                 @error('philhealth_number')<div class="error-msg">{{ $message }}</div>@enderror
             </div>
         </div>
@@ -176,9 +179,9 @@
         @endif
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary" id="submitBtn" onclick="setLoading(event)">
+            <button type="submit" class="btn-primary" id="submitBtn">
                 <span id="submitText">Save Changes</span>
-                <span id="submitLoader" class="btn-loader"></span>
+                <span id="submitLoader" class="btn-loader" style="display:none"></span>
             </button>
             <a href="{{ route('employees.index') }}" class="btn-secondary">Cancel</a>
         </div>
@@ -186,12 +189,46 @@
 </div>
 
 <script>
-function setLoading(event) {
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    document.getElementById('submitText').style.display = 'none';
-    document.getElementById('submitLoader').style.display = 'inline-block';
-}
+let formDirty = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const submitLoader = document.getElementById('submitLoader');
+
+    if (form && submitBtn) {
+        form.addEventListener('submit', function() {
+            submitBtn.disabled = true;
+            if (submitText) submitText.style.display = 'none';
+            if (submitLoader) submitLoader.style.display = 'inline-block';
+        });
+    }
+
+    toggleContractExpiry(document.getElementById('empStatus').value);
+
+    if (form) {
+        form.addEventListener('input', function() {
+            formDirty = true;
+        });
+
+        form.addEventListener('change', function(e) {
+            if (e.target.id !== 'role') formDirty = true;
+        });
+
+        form.addEventListener('submit', function() {
+            formDirty = false;
+        });
+    }
+
+    window.addEventListener('beforeunload', function(e) {
+        if (formDirty) {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        }
+    });
+});
 
 function toggleContractExpiry(val) {
     const input = document.getElementById('contractExpiryInput');
@@ -234,34 +271,6 @@ function updateRole(value, employeeId) {
     });
 }
 
-let formDirty = false;
-
-document.addEventListener('DOMContentLoaded', function() {
-    toggleContractExpiry(document.getElementById('empStatus').value);
-
-    const form = document.querySelector('form');
-    if (!form) return;
-
-    form.addEventListener('input', function() {
-        formDirty = true;
-    });
-
-    form.addEventListener('change', function(e) {
-        if (e.target.id !== 'role') formDirty = true;
-    });
-
-    form.addEventListener('submit', function() {
-        formDirty = false;
-    });
-
-    window.addEventListener('beforeunload', function(e) {
-        if (formDirty) {
-            e.preventDefault();
-            e.returnValue = '';
-            return '';
-        }
-    });
-});
 </script>
 
 </x-app-layout>

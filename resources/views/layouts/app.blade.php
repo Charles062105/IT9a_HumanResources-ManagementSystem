@@ -36,6 +36,7 @@
         </button>
 
         {{-- SIDEBAR --}}
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
         <nav class="sidebar" aria-label="Main navigation">
             <div class="sb-top">
                 <div class="brand">
@@ -213,6 +214,24 @@
                     <button onclick="this.parentElement.remove()" class="flash-close">×</button>
                 </div>
             @endif
+            @if(session('warning'))
+                <div class="flash flash-warn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    {{ session('warning') }}
+                    <button onclick="this.parentElement.remove()" class="flash-close">×</button>
+                </div>
+            @endif
+            @if(session('info'))
+                <div class="flash flash-info">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    {{ session('info') }}
+                    <button onclick="this.parentElement.remove()" class="flash-close">×</button>
+                </div>
+            @endif
 
             <div class="content">
                 {{ $slot }}
@@ -317,22 +336,42 @@
         (function () {
             const toggle = document.getElementById('sidebarToggle');
             const sidebar = document.querySelector('.sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
             if (!toggle || !sidebar) return;
+
+            function closeSidebar() {
+                sidebar.classList.remove('active');
+                toggle.classList.remove('active');
+                toggle.setAttribute('aria-expanded', 'false');
+                if (backdrop) backdrop.classList.remove('active');
+            }
+
+            function openSidebar() {
+                sidebar.classList.add('active');
+                toggle.classList.add('active');
+                toggle.setAttribute('aria-expanded', 'true');
+                if (backdrop) backdrop.classList.add('active');
+            }
 
             // Toggle sidebar
             toggle.addEventListener('click', function (e) {
                 e.stopPropagation();
-                sidebar.classList.toggle('active');
-                toggle.classList.toggle('active');
-                toggle.setAttribute('aria-expanded', toggle.classList.contains('active'));
+                if (sidebar.classList.contains('active')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
             });
+
+            // Close sidebar when clicking backdrop
+            if (backdrop) {
+                backdrop.addEventListener('click', closeSidebar);
+            }
 
             // Close sidebar when clicking outside
             document.addEventListener('click', function (e) {
                 if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-                    sidebar.classList.remove('active');
-                    toggle.classList.remove('active');
-                    toggle.setAttribute('aria-expanded', 'false');
+                    closeSidebar();
                 }
             });
 
@@ -340,9 +379,7 @@
             sidebar.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', function () {
                     if (window.innerWidth <= 768) {
-                        sidebar.classList.remove('active');
-                        toggle.classList.remove('active');
-                        toggle.setAttribute('aria-expanded', 'false');
+                        closeSidebar();
                     }
                 });
             });
@@ -350,9 +387,7 @@
             // Close sidebar on window resize if screen is large enough
             window.addEventListener('resize', function () {
                 if (window.innerWidth > 768) {
-                    sidebar.classList.remove('active');
-                    toggle.classList.remove('active');
-                    toggle.setAttribute('aria-expanded', 'false');
+                    closeSidebar();
                 }
             });
         })();

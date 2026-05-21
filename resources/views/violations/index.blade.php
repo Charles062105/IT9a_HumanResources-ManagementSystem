@@ -93,7 +93,7 @@
                     @endif
                 </tr>
                 @empty
-                <tr><td colspan="{{ auth()->user()->isAdmin() ? '9' : '8' }}"><div class="empty-state">
+                <tr><td colspan="{{ auth()->user()->isAdmin() ? '8' : '7' }}"><div class="empty-state">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     No violations found
                 </div></td></tr>
@@ -107,11 +107,12 @@
 </div>
 
 {{-- Resolve Modal --}}
-<div id="resolveModal" class="modal-overlay">
+<div id="resolveModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="resTitle" tabindex="-1">
     <div class="modal-dialog" style="max-width:400px">
         <div class="modal-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            Mark as Resolved
+            <span id="resTitle">Mark as Resolved</span>
+            <button type="button" class="modal-close-btn" onclick="closeResolveModal()" aria-label="Close modal">×</button>
         </div>
         <div class="modal-body">
             <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
@@ -132,17 +133,29 @@
 @push('scripts')
 <script>
 function openResolveModal(id, name, offense) {
-    document.getElementById('resName').textContent = name;
-    document.getElementById('resOffense').textContent = offense;
+    document.getElementById('resName').textContent = name || '—';
+    document.getElementById('resOffense').textContent = offense || '—';
     var m = document.getElementById('resolveModal');
-    m.style.display = 'flex'; m.classList.add('show');
+    m.classList.add('show');
+    m.setAttribute('aria-hidden', 'false');
     document.getElementById('resolveForm').action = '{{ route('violations.resolve', '__ID__') }}'.replace('__ID__', id);
+    m.querySelector('button[type="submit"]').focus();
 }
 function closeResolveModal() {
     var m = document.getElementById('resolveModal');
-    m.style.display = 'none'; m.classList.remove('show');
+    m.classList.remove('show');
+    m.setAttribute('aria-hidden', 'true');
 }
 
+// Close on backdrop click
+var resolveModal = document.getElementById('resolveModal');
+if (resolveModal) {
+    resolveModal.addEventListener('click', function(e) {
+        if (e.target === resolveModal) closeResolveModal();
+    });
+}
+
+// Close on Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') { closeResolveModal(); }
 });

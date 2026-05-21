@@ -84,8 +84,10 @@ class NotificationController extends Controller
 
     public function readAll()
     {
-        /** @noinspection PhpMethodParametersCountMismatchInspection */
-        HrmsNotification::where('is_read', false)->update(['is_read' => true]);
+        HrmsNotification::where(function ($q) {
+            $q->where('user_id', Auth::id())
+                ->orWhereNull('user_id');
+        })->where('is_read', false)->update(['is_read' => true]);
 
         return back()->with('success', 'All notifications marked as read.');
     }

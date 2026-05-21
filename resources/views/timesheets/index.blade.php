@@ -100,7 +100,7 @@
                     @endif
                 </tr>
                 @empty
-                <tr><td colspan="{{ auth()->user()->isAdmin() ? '9' : '8' }}"><div class="empty-state">No timesheets found</div></td></tr>
+                <tr><td colspan="{{ auth()->user()->isAdmin() ? '8' : '7' }}"><div class="empty-state">No timesheets found</div></td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -116,6 +116,7 @@
         <div class="modal-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
             <h3 id="approveModalTitle" style="margin:0">Approve Timesheet</h3>
+            <button type="button" class="modal-close-btn" onclick="closeApproveModal()" aria-label="Close modal">✕</button>
         </div>
         <div class="modal-body">
             <p style="margin:0;font-size:13px;color:var(--text2);line-height:1.6">
@@ -139,6 +140,7 @@
         <div class="modal-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             <h3 id="rejectModalTitle" style="margin:0">Reject Timesheet</h3>
+            <button type="button" class="modal-close-btn" onclick="closeRejectModal()" aria-label="Close modal">✕</button>
         </div>
         <div class="modal-body">
             <p style="margin:0 0 12px;font-size:13px;color:var(--text2);line-height:1.6">
@@ -173,8 +175,8 @@ function openApproveModal(id, name, week) {
     // Use the route URL built from the current route helper output and replace the numeric id.
 document.getElementById('approveForm').action = document.getElementById('approveForm').dataset.approveAction.replace('__ID__', id);
 
-    // Focus first button for accessibility
-    var primary = m.querySelector('button[type="submit"], button');
+    // Focus primary action button for accessibility
+    var primary = m.querySelector('button[type="submit"]');
     if (primary) primary.focus();
 }
 function closeApproveModal() {
@@ -195,7 +197,7 @@ function openRejectModal(id, name, week) {
 
 document.getElementById('rejectForm').action = document.getElementById('rejectForm').dataset.rejectAction.replace('__ID__', id);
 
-    var first = m.querySelector('button[type="submit"], textarea, button');
+    var first = m.querySelector('button[type="submit"]');
     if (first) first.focus();
 }
 function closeRejectModal() {
@@ -209,9 +211,22 @@ document.getElementById('rejectForm').addEventListener('submit', function() {
     document.getElementById('rejectReasonInput').value = document.getElementById('rejectReason').value;
 });
 
+// Close modals on backdrop click
+['approveModal', 'rejectModal'].forEach(function(id) {
+    var m = document.getElementById(id);
+    if (!m) return;
+    m.addEventListener('click', function(e) {
+        if (e.target === m) {
+            if (id === 'approveModal') closeApproveModal();
+            else closeRejectModal();
+        }
+    });
+});
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        closeApproveModal(); closeRejectModal();
+        if (document.getElementById('rejectModal').classList.contains('show')) closeRejectModal();
+        else if (document.getElementById('approveModal').classList.contains('show')) closeApproveModal();
     }
 });
 </script>

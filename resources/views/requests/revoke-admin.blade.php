@@ -33,7 +33,7 @@
             </div>
         </div>
 
-<form method="POST" action="{{ route('users.revoke-admin', $user) }}" id="revokeRoleForm" data-user-name="{{ $user->name }}" data-user-role="{{ ucfirst(str_replace('_', ' ', $user->role)) }}" data-submit-url="{{ route('users.revoke-admin', $user) }}" >
+        <form method="POST" action="{{ route('users.revoke-admin', $user) }}" id="revokeRoleForm" data-user-name="{{ $user->name }}" data-user-role="{{ ucfirst(str_replace('_', ' ', $user->role)) }}" data-submit-url="{{ route('users.revoke-admin', $user) }}">
             @csrf
             @method('PATCH')
 
@@ -65,5 +65,85 @@
         </form>
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function() {
+    // Inline fallback handler - ensures form works even if module script fails
+    var form = document.getElementById('revokeRoleForm');
+    var submitBtn = document.getElementById('submitBtn');
+    var submitText = document.getElementById('submitText');
+    var submitLoader = document.getElementById('submitLoader');
+    var formConfirmed = false;
+
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            // Check if already submitted or confirmed
+            if (formConfirmed) {
+                return true;
+            }
+
+            e.preventDefault();
+            formConfirmed = true;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            if (submitText) submitText.style.display = 'none';
+            if (submitLoader) submitLoader.style.display = 'inline-block';
+
+            var userName = form.dataset.userName || 'this user';
+
+            // Create confirmation dialog
+            var overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;';
+            overlay.innerHTML = '<div class="modal-dialog" style="background:#fff;border-radius:8px;padding:24px;max-width:400px;width:90%;box-shadow:0 4px 24px rgba(0,0,0,0.15);">' +
+                '<div style="font-weight:600;font-size:18px;margin-bottom:12px;color:#dc2626;">Revoke Admin Role</div>' +
+                '<div style="color:#64748b;margin-bottom:20px;">' +
+                '<p>You are about to revoke admin privileges from <strong>' + userName + '</strong>.</p>' +
+                '<p style="margin-top:12px;color:#dc2626;"><strong>⚠ Warning:</strong> This action will:</p>' +
+                '<ul style="margin:8px 0;padding-left:20px;">' +
+                '<li>Immediately remove all admin permissions</li>' +
+                '<li>Revert user to employee status</li>' +
+                '<li>Send notification to ' + userName + '</li>' +
+                '<li>Be logged in audit trail</li>' +
+                '</ul>' +
+                '<p style="margin-top:12px;font-style:italic;">This action cannot be easily undone.</p>' +
+                '</div>' +
+                '<div style="display:flex;gap:12px;justify-content:flex-end;">' +
+                '<button type="button" id="cancelRoleBtn" style="padding:8px 16px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;">Cancel</button>' +
+                '<button type="button" id="confirmRoleBtn" style="padding:8px 16px;border:none;border-radius:6px;background:#dc2626;color:#fff;cursor:pointer;">Revoke</button>' +
+                '</div>' +
+                '</div>';
+            document.body.appendChild(overlay);
+
+            document.getElementById('cancelRoleBtn').addEventListener('click', function() {
+                overlay.remove();
+                formConfirmed = false;
+                submitBtn.disabled = false;
+                if (submitText) submitText.style.display = '';
+                if (submitLoader) submitLoader.style.display = '';
+            });
+
+            document.getElementById('confirmRoleBtn').addEventListener('click', function() {
+                overlay.remove();
+                form.submit();
+            });
+
+            // Close on overlay click
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                    formConfirmed = false;
+                    submitBtn.disabled = false;
+                    if (submitText) submitText.style.display = '';
+                    if (submitLoader) submitLoader.style.display = '';
+                }
+            });
+        });
+    }
+})();
+</script>
+@endpush
 
 </x-app-layout>

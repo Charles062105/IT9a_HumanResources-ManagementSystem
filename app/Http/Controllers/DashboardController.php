@@ -71,12 +71,12 @@ class DashboardController extends Controller
             ->where('date_hired', '!=', $today)
             ->limit(2)->get();
 
-        $milestones = $birthdays->map(fn ($e) => ['employee' => $e, 'type' => 'birthday'])
-            ->merge($anniversaries->map(fn ($e) => [
+        $milestones = collect($birthdays->map(fn ($e) => (object) ['employee' => $e, 'type' => 'birthday'])
+            ->concat($anniversaries->map(fn ($e) => (object) [
                 'employee' => $e,
                 'type' => 'anniversary',
                 'years' => $today->year - Carbon::parse($e->date_hired)->year,
-            ]));
+            ])));
 
         // Task chips for welcome strip
         $pendingRequests = UserRequest::where('status', 'pending')->count();
@@ -94,7 +94,8 @@ class DashboardController extends Controller
             'pendingLeaves', 'openViolations',
             'chartDays', 'chartPresent', 'chartAbsent',
             'pendingLeaveList', 'recentViolations',
-            'milestones', 'pendingRequests', 'todayAttendance'
+            'milestones', 'pendingRequests', 'todayAttendance',
+            'currentEmployee'
         ));
     }
 

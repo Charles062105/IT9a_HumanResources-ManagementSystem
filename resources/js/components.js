@@ -184,9 +184,6 @@ export class ConfirmDialog {
           resolve(false);
         }
       });
-
-      // Trigger animation
-      setTimeout(() => dialog.classList.add('show'), 10);
     });
   }
 }
@@ -197,7 +194,7 @@ export class ConfirmDialog {
 export class LoadingOverlay {
   static show(message = 'Loading...') {
     const overlay = document.createElement('div');
-    overlay.className = 'loading-overlay show';
+    overlay.className = 'loading-overlay';
     overlay.id = 'loading-overlay';
     overlay.innerHTML = `
       <div class="loading-spinner">
@@ -212,8 +209,7 @@ export class LoadingOverlay {
   static hide() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
-      overlay.classList.remove('show');
-      setTimeout(() => overlay.remove(), 300);
+      overlay.remove();
     }
   }
 }

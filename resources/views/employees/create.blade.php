@@ -33,7 +33,7 @@
             </div>
             <div class="form-group">
                 <label for="phone">Phone Number</label>
-                <input type="text" id="phone" name="phone" value="{{ old('phone') }}" placeholder="+63 9XX XXX XXXX">
+                <input type="tel" id="phone" name="phone" value="{{ old('phone') }}" placeholder="+63 9XX XXX XXXX">
             </div>
         </div>
         <div class="form-row full">
@@ -107,16 +107,19 @@
             <div class="form-group">
                 <label for="sss_number">SSS Number</label>
                 <input type="text" id="sss_number" name="sss_number" value="{{ old('sss_number') }}" placeholder="00-0000000-0" title="Format: 00-0000000-0">
+                <div class="form-help">Format: XX-XXXXXXX-X — hyphens optional</div>
             </div>
             <div class="form-group">
                 <label for="pagibig_number">Pag-IBIG (HDMF) Number</label>
                 <input type="text" id="pagibig_number" name="pagibig_number" value="{{ old('pagibig_number') }}" placeholder="0000-0000-0000" title="Format: 0000-0000-0000">
+                <div class="form-help">Format: XXXX-XXXX-XXXX — hyphens optional</div>
             </div>
         </div>
         <div class="form-row">
             <div class="form-group">
                 <label for="philhealth_number">PhilHealth Number</label>
                 <input type="text" id="philhealth_number" name="philhealth_number" value="{{ old('philhealth_number') }}" placeholder="00-000000000-0" title="Format: 00-000000000-0">
+                <div class="form-help">Format: XX-XXXXXXXX-X — hyphens optional</div>
             </div>
         </div>
 

@@ -27,9 +27,8 @@ class CheckContractExpiry extends Command
         foreach ($expiringContracts as $employee) {
             // Check if notification already exists for this employee
             $existingNotification = HrmsNotification::where('user_id', $employee->user_id)
-                ->where('type', 'contract_expiry')
-                ->where('reference_id', $employee->id)
-                ->where('read_at', null)
+                ->where('title', 'LIKE', '%contract%expires%')
+                ->where('is_read', false)
                 ->exists();
 
             if (! $existingNotification && $employee->user_id) {
@@ -39,11 +38,9 @@ class CheckContractExpiry extends Command
                 // Create notification
                 HrmsNotification::create([
                     'user_id' => $employee->user_id,
-                    'type' => 'contract_expiry',
+                    'type' => 'warning',
+                    'title' => 'Contract Expiry Alert',
                     'message' => "Contract for {$employee->full_name} expires in {$daysRemaining} days ({$employee->contract_expiry->format('M j, Y')})",
-                    'reference_id' => $employee->id,
-                    'reference_type' => 'employee',
-                    'read_at' => null,
                 ]);
 
                 $count++;

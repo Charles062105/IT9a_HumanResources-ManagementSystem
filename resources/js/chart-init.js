@@ -86,7 +86,8 @@ export function initLiveClock(clockElId) {
 
 // Auto-init if elements exist on page
 document.addEventListener('DOMContentLoaded', () => {
-    initLiveClock('live-clock');
+    // Note: live-clock init removed to avoid duplicate ID conflicts
+    // Each page should init its own clock if needed
 
     const attendCanvas = document.getElementById('attendChart');
     if (attendCanvas && window.__chartData) {

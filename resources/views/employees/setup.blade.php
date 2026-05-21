@@ -29,7 +29,7 @@
 @endif
 
 <div class="form-card" style="max-width:720px">
-    <form method="POST" action="{{ route('employees.setup.store') }}" id="employee-setup-form" data-validate>>
+    <form method="POST" action="{{ route('employees.setup.store') }}" id="employee-setup-form" data-validate>
         @csrf
 
         {{-- Hidden user_id to link employee record to the user account --}}
@@ -145,7 +145,7 @@
         <div class="divider"></div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary" style="padding:10px 24px" id="submitBtn" onclick="setLoading(event)">
+            <button type="submit" class="btn-primary" style="padding:10px 24px" id="submitBtn">
                 <span id="submitText">Save employee profile</span>
                 <span id="submitLoader" style="display:none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
             </button>
@@ -216,7 +216,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     form.addEventListener('submit', (e) => {
       formDirty = false;
-      LoadingOverlay.show('Saving employee profile...');
+      const btn = document.getElementById('submitBtn');
+      const text = document.getElementById('submitText');
+      const loader = document.getElementById('submitLoader');
+      if (btn) btn.disabled = true;
+      if (text) text.style.display = 'none';
+      if (loader) loader.style.display = 'inline-block';
     });
 
     window.addEventListener('beforeunload', function(e) {
@@ -246,12 +251,7 @@ function toggleContractExpiry(val) {
     }
 }
 
-function setLoading(event) {
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    document.getElementById('submitText').style.display = 'none';
-    document.getElementById('submitLoader').style.display = 'inline-block';
-}
+// setLoading removed - handled by form submit event listener
 </script>
 @endpush
 

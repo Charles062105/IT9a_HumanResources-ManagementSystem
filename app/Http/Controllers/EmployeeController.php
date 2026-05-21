@@ -63,9 +63,9 @@ class EmployeeController extends Controller
             'status' => 'required|in:active,probationary,contractual,inactive',
             'shift_id' => 'nullable|exists:shifts,id',
             'contract_expiry' => 'required_if:status,contractual|nullable|date|after:today|before:'.now()->addYears(5)->format('Y-m-d'),
-            'sss_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{7}-\d$/',
-            'pagibig_number' => 'nullable|string|max:30|regex:/^\d{4}-\d{4}-\d{4}$/',
-            'philhealth_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{9}-\d$/',
+            'sss_number' => 'nullable|string|max:30|regex:/^\d{2}-?\d{7}-?\d$/',
+            'pagibig_number' => 'nullable|string|max:30|regex:/^\d{4}-?\d{4}-?\d{4}$/',
+            'philhealth_number' => 'nullable|string|max:30|regex:/^\d{2}-?\d{9}-?\d$/',
         ]);
 
         // Auto-generate employee ID
@@ -123,9 +123,9 @@ class EmployeeController extends Controller
             'status' => 'required|in:active,probationary,contractual,inactive',
             'shift_id' => 'nullable|exists:shifts,id',
             'contract_expiry' => 'required_if:status,contractual|nullable|date|after:today|before:'.now()->addYears(5)->format('Y-m-d'),
-            'sss_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{7}-\d$/',
-            'pagibig_number' => 'nullable|string|max:30|regex:/^\d{4}-\d{4}-\d{4}$/',
-            'philhealth_number' => 'nullable|string|max:30|regex:/^\d{2}-\d{9}-\d$/',
+            'sss_number' => 'nullable|string|max:30|regex:/^\d{2}-?\d{7}-?\d$/',
+            'pagibig_number' => 'nullable|string|max:30|regex:/^\d{4}-?\d{4}-?\d{4}$/',
+            'philhealth_number' => 'nullable|string|max:30|regex:/^\d{2}-?\d{9}-?\d$/',
         ]);
 
         $employee->update($data);
